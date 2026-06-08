@@ -9,13 +9,13 @@ TEMPLATE=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --help|-h)
-      echo "Usage: init_python.sh [--template <name>]"
+      echo "Usage: repokit [--template <name>]"
       echo ""
       echo "Initializes a GitHub repository in the current directory."
       echo ""
       echo "  1. Create a folder:  mkdir my-repo"
       echo "  2. Enter it:         cd my-repo"
-      echo "  3. Run:              init_python.sh"
+      echo "  3. Run:              repokit"
       echo ""
       echo "Options:"
       echo "  --template <name>  Template set to use (default: python)"
@@ -28,7 +28,7 @@ while [[ $# -gt 0 ]]; do
       echo "  git  — https://git-scm.com"
       echo "  gh   — https://cli.github.com (must be authenticated)"
       echo ""
-      echo "First-time setup: run install.sh to add init_python.sh to PATH"
+      echo "First-time setup: run install.sh to add repokit to PATH"
       exit 0
       ;;
     --template)
