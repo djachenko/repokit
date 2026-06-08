@@ -2,10 +2,10 @@
 
 set -e
 
-TPL="$SCRIPT_DIR/templates/$TEMPLATE/pyproject.toml"
+TPL="$SCRIPT_DIR/languages/$LANGUAGE/pyproject.toml"
 
 if [[ ! -f "$TPL" ]]; then
-  echo "→ Skipping pyproject.toml (not in template '$TEMPLATE')"
+  echo "→ Skipping pyproject.toml (not in language '$LANGUAGE')"
 elif [[ -f "pyproject.toml" ]]; then
   echo "→ Writing pyproject.toml..."
   echo "  skip pyproject.toml (already exists)"
