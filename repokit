@@ -4,12 +4,12 @@ set -e
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
-TEMPLATE=""
+LANGUAGE=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --help|-h)
-      echo "Usage: repokit [--template <name>]"
+      echo "Usage: repokit [--language <name>]"
       echo ""
       echo "Initializes a GitHub repository in the current directory."
       echo ""
@@ -18,7 +18,7 @@ while [[ $# -gt 0 ]]; do
       echo "  3. Run:              repokit"
       echo ""
       echo "Options:"
-      echo "  --template <name>  Template set to use (default: python)"
+      echo "  --language <name>  Template set to use (default: python)"
       echo "                     Available: python, bash"
       echo ""
       echo "Repo name is taken from the current directory name."
@@ -31,8 +31,8 @@ while [[ $# -gt 0 ]]; do
       echo "First-time setup: run install.sh to add repokit to PATH"
       exit 0
       ;;
-    --template)
-      TEMPLATE="$2"
+    --language)
+      LANGUAGE="$2"
       shift 2
       ;;
     *)
@@ -42,13 +42,13 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ -z "$TEMPLATE" ]]; then
-  echo "Error: --template is required. Available: python, bash"
+if [[ -z "$LANGUAGE" ]]; then
+  echo "Error: --language is required. Available: python, bash"
   exit 1
 fi
 
 export SCRIPT_DIR
-export TEMPLATE
+export LANGUAGE
 export REPO
 REPO=$(basename "$PWD")
 
