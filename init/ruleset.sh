@@ -4,12 +4,19 @@ set -e
 
 echo "→ Applying ruleset..."
 
+RULESET_NAME="$OWNER-github-flow-ruleset"
+RULESET_ID=$(gh api "repos/$OWNER/$REPO/rulesets" --jq ".[] | select(.name == \"$RULESET_NAME\") | .id" 2>/dev/null)
+
+if [[ -n "$RULESET_ID" ]]; then
+  gh api "repos/$OWNER/$REPO/rulesets/$RULESET_ID" --method DELETE
+fi
+
 gh api "repos/$OWNER/$REPO/rulesets" \
   --method POST \
   --header "Content-Type: application/json" \
-  --input - << 'EOF'
+  --input - << EOF
 {
-  "name": "master",
+  "name": "$RULESET_NAME",
   "target": "branch",
   "enforcement": "active",
   "conditions": {
