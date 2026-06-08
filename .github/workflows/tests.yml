@@ -17,4 +17,4 @@ jobs:
         run: find . -name "*.sh" -o -name "repokit" | xargs shellcheck
 
       - name: shfmt
-        run: find . -name "*.sh" -o -name "repokit" | xargs shfmt -i 2 -d
+        run: find . -name "*.sh" | xargs shfmt -i 2 -sr -d
