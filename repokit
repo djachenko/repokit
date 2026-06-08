@@ -64,10 +64,10 @@ export OWNER
 OWNER=$(gh api user --jq '.login')
 
 HAS_GIT=false
-git rev-parse --git-dir &>/dev/null && HAS_GIT=true
+git rev-parse --git-dir &> /dev/null && HAS_GIT=true
 
 HAS_REMOTE=false
-gh repo view "$OWNER/$REPO" &>/dev/null && HAS_REMOTE=true
+gh repo view "$OWNER/$REPO" &> /dev/null && HAS_REMOTE=true
 
 if [[ "$HAS_GIT" == false && "$HAS_REMOTE" == true ]]; then
   echo "Error: GitHub repo '$OWNER/$REPO' already exists but no local git. Clone it first."
