@@ -6,7 +6,7 @@ echo "→ Writing workflows..."
 
 mkdir -p .github/workflows
 
-for tpl in "$SCRIPT_DIR/templates/$TEMPLATE/workflows/"*.yml; do
+for tpl in "$SCRIPT_DIR/languages/$LANGUAGE/workflows/"*.yml; do
   name=$(basename "$tpl")
   dest=".github/workflows/$name"
   if [[ -f "$dest" ]]; then
