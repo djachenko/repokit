@@ -94,8 +94,16 @@ fi
 
 bash "$SCRIPT_DIR/init/workflows.sh"
 bash "$SCRIPT_DIR/languages/$LANGUAGE/setup.sh"
+
+if ! git diff --quiet || ! git diff --cached --quiet || git ls-files --others --exclude-standard | grep -q .; then
+  echo "→ Committing configuration..."
+  git add .
+  git commit -m "chore: repokit setup"
+  git push
+fi
+
 bash "$SCRIPT_DIR/init/ruleset.sh"
-bash "$SCRIPT_DIR/init/instructions.sh"
+bash "$SCRIPT_DIR/languages/$LANGUAGE/instructions.sh"
 
 echo ""
 echo "✓ Done: https://github.com/$OWNER/$REPO"
