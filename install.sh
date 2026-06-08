@@ -7,7 +7,7 @@ SHELL_RC="$HOME/.zshrc"
 
 LINE="export PATH=\"$SCRIPT_DIR:\$PATH\""
 
-if grep -qF "$SCRIPT_DIR" "$SHELL_RC" 2>/dev/null; then
+if grep -qF "$SCRIPT_DIR" "$SHELL_RC" 2> /dev/null; then
   echo "Already in PATH ($SHELL_RC)"
 else
   echo "$LINE" >> "$SHELL_RC"
