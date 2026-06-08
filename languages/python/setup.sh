@@ -2,11 +2,9 @@
 
 set -e
 
-TPL="$SCRIPT_DIR/languages/$LANGUAGE/pyproject.toml"
+TPL="$SCRIPT_DIR/languages/python/pyproject.toml"
 
-if [[ ! -f "$TPL" ]]; then
-  echo "→ Skipping pyproject.toml (not in language '$LANGUAGE')"
-elif [[ -f "pyproject.toml" ]]; then
+if [[ -f "pyproject.toml" ]]; then
   echo "→ Writing pyproject.toml..."
   echo "  skip pyproject.toml (already exists)"
 else
