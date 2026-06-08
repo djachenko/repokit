@@ -4,7 +4,7 @@ set -e
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
-TEMPLATE="python"
+TEMPLATE=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -41,6 +41,11 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+if [[ -z "$TEMPLATE" ]]; then
+  echo "Error: --template is required. Available: python, bash"
+  exit 1
+fi
 
 export SCRIPT_DIR
 export TEMPLATE
