@@ -5,21 +5,22 @@ set -e
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 LANGUAGE=""
+AVAILABLE_LANGUAGES=$(ls "$SCRIPT_DIR/languages/")
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --help|-h)
-      echo "Usage: repokit [--language <name>]"
+      echo "Usage: repokit --language <name>"
       echo ""
       echo "Initializes a GitHub repository in the current directory."
       echo ""
       echo "  1. Create a folder:  mkdir my-repo"
       echo "  2. Enter it:         cd my-repo"
-      echo "  3. Run:              repokit"
+      echo "  3. Run:              repokit --language python"
       echo ""
       echo "Options:"
-      echo "  --language <name>  Template set to use (default: python)"
-      echo "                     Available: python, bash"
+      echo "  --language <name>  Language profile to use."
+      echo "                     Available: $(echo "$AVAILABLE_LANGUAGES" | tr '\n' ' ')"
       echo ""
       echo "Repo name is taken from the current directory name."
       echo "GitHub owner is taken from 'gh auth'."
@@ -43,7 +44,12 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -z "$LANGUAGE" ]]; then
-  echo "Error: --language is required. Available: python, bash"
+  echo "Error: --language is required. Available: $(echo "$AVAILABLE_LANGUAGES" | tr '\n' ' ')"
+  exit 1
+fi
+
+if ! echo "$AVAILABLE_LANGUAGES" | grep -qx "$LANGUAGE"; then
+  echo "Error: unknown language '$LANGUAGE'. Available: $(echo "$AVAILABLE_LANGUAGES" | tr '\n' ' ')"
   exit 1
 fi
 
@@ -87,7 +93,7 @@ if [[ "$HAS_REMOTE" == false ]]; then
 fi
 
 bash "$SCRIPT_DIR/init/workflows.sh"
-bash "$SCRIPT_DIR/init/pyproject.sh"
+bash "$SCRIPT_DIR/languages/$LANGUAGE/setup.sh"
 bash "$SCRIPT_DIR/init/ruleset.sh"
 bash "$SCRIPT_DIR/init/instructions.sh"
 
