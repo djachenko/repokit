@@ -52,6 +52,20 @@ GitHub owner is taken from `gh auth`.
 
 ---
 
+## Adding a language
+
+Create a folder under `languages/` — it will be picked up automatically:
+
+```
+languages/<name>/
+├── workflows/    # CI workflows copied to .github/workflows/
+└── setup.sh      # language-specific setup (required, can be empty)
+```
+
+`setup.sh` is called by the orchestrator after workflows are copied. Use it for anything language-specific (e.g. generating config files). Has access to `$REPO`, `$OWNER`, `$SCRIPT_DIR` env vars.
+
+---
+
 ## Python
 
 **What repokit sets up:**
