@@ -27,3 +27,15 @@ Workflow-файлы и pyproject.toml живут в `templates/` как наст
 ### required_status_checks: один контекст "integration"
 
 Матрица в `integration.yml` создаёт много контекстов. Required check — только финальный job `integration` (depends on `test`), не отдельные матричные джобы.
+
+### Ruleset: GET → PATCH/POST вместо тупого POST
+
+Тупой POST создаёт дубли если ruleset уже есть. Решение: проверяем список через GET, если нашли по имени — PATCH (полная замена, не merge), нет — POST. PATCH на GitHub рулсетах перетирает полностью, не мержит JSON.
+
+### Ruleset name: не "master"
+
+Имя "master" путается с именем ветки. Менять на что-то описательное (обсуждается).
+
+### Конфликты шаблонов: пропускать по умолчанию
+
+Если workflows/ или pyproject.toml уже существуют — пропускаем, не перетираем. Флаг --force отложен до реальной потребности.
