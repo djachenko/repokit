@@ -13,3 +13,15 @@ else
   echo "$LINE" >> "$SHELL_RC"
   echo "Added to $SHELL_RC. Restart shell or: source $SHELL_RC"
 fi
+
+git config --global core.hooksPath "$SCRIPT_DIR/hooks"
+echo "Git hooks configured globally ($SCRIPT_DIR/hooks)"
+
+OWNER_EMAIL=$(gh api user --jq '.email // empty' 2>/dev/null)
+if [[ -z "$OWNER_EMAIL" ]]; then
+  OWNER_EMAIL=$(git config --global user.email)
+fi
+if [[ -n "$OWNER_EMAIL" ]]; then
+  git config --global repokit.ownerEmail "$OWNER_EMAIL"
+  echo "Owner email set: $OWNER_EMAIL"
+fi

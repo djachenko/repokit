@@ -1,0 +1,28 @@
+#!/bin/bash
+
+EXPECTED=$(git config user.email)
+
+if [[ -z "$EXPECTED" ]]; then
+  echo "✗ git user.email is not set"
+  exit 1
+fi
+
+while IFS=' ' read -r local_ref local_sha remote_ref remote_sha; do
+  if [[ "$remote_sha" == "0000000000000000000000000000000000000000" ]]; then
+    range=$(git rev-list --not --remotes "$local_sha" 2>/dev/null)
+  else
+    range="$remote_sha..$local_sha"
+  fi
+
+  [[ -z "$range" ]] && continue
+
+  bad=$(git log --format="%h %ae %s" $range | awk -v e="$EXPECTED" '$2 != e')
+
+  if [[ -n "$bad" ]]; then
+    echo "✗ Commits with wrong author email (expected: $EXPECTED):"
+    while IFS= read -r line; do
+      echo "  $line"
+    done <<< "$bad"
+    exit 1
+  fi
+done
