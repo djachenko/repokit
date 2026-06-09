@@ -17,7 +17,7 @@ fi
 git config --global core.hooksPath "$SCRIPT_DIR/hooks"
 echo "Git hooks configured globally ($SCRIPT_DIR/hooks)"
 
-OWNER_EMAIL=$(gh api user --jq '.email // empty' 2>/dev/null)
+OWNER_EMAIL=$(gh api user --jq '.email // empty' 2> /dev/null)
 if [[ -z "$OWNER_EMAIL" ]]; then
   OWNER_EMAIL=$(git config --global user.email)
 fi
