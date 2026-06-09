@@ -11,11 +11,20 @@ if [[ -n "$RULESET_ID" ]]; then
   gh api "repos/$OWNER/$REPO/rulesets/$RULESET_ID" --method DELETE
 fi
 
+INSTALLATION_ID=$(gh api "repos/$OWNER/$REPO/installation" --jq '.id' 2>/dev/null || echo "")
+if [[ -n "$INSTALLATION_ID" ]]; then
+  BYPASS_ACTORS='"bypass_actors": [{"actor_id": '"$INSTALLATION_ID"', "actor_type": "Integration", "bypass_mode": "always"}],'
+  echo "→ Adding GitHub App (installation $INSTALLATION_ID) to bypass list"
+else
+  BYPASS_ACTORS='"bypass_actors": [],'
+fi
+
 gh api "repos/$OWNER/$REPO/rulesets" \
   --method POST \
   --header "Content-Type: application/json" \
   --input - << EOF
 {
+  $BYPASS_ACTORS
   "name": "$RULESET_NAME",
   "target": "branch",
   "enforcement": "active",
