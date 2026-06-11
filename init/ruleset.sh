@@ -11,11 +11,17 @@ if [[ -n "$RULESET_ID" ]]; then
   gh api "repos/$OWNER/$REPO/rulesets/$RULESET_ID" --method DELETE
 fi
 
+BYPASS_ACTORS_JSON=""
+if [[ -n "$GITHUB_APP_ID" ]]; then
+  BYPASS_ACTORS_JSON='"bypass_actors": [{"actor_id": '"$GITHUB_APP_ID"', "actor_type": "Integration", "bypass_mode": "always"}],'
+fi
+
 gh api "repos/$OWNER/$REPO/rulesets" \
   --method POST \
   --header "Content-Type: application/json" \
   --input - << EOF
 {
+  $BYPASS_ACTORS_JSON
   "name": "$RULESET_NAME",
   "target": "branch",
   "enforcement": "active",
