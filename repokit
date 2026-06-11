@@ -5,12 +5,14 @@ set -e
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 GITHUB_APP_ID=""
+APP_SLUG=""
+APP_ACTOR_ID=""
 CONFIG_FILE="$HOME/.repokit"
 if [[ -f "$CONFIG_FILE" ]]; then
   # shellcheck source=/dev/null
   source "$CONFIG_FILE"
 fi
-export GITHUB_APP_ID
+export GITHUB_APP_ID APP_SLUG APP_ACTOR_ID
 
 LANGUAGE=""
 AVAILABLE_LANGUAGES=$(ls "$SCRIPT_DIR/languages/")
