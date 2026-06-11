@@ -61,7 +61,7 @@ init_python/
 - `test` — матрица OS × python (ubuntu/macos/windows × 3.10–3.x), pytest
 - `integration` — depends on test, merge master → PSR version (no commit) → dev suffix (.devN) → build → TestPyPI → smoke test
 
-**release.yml** — push на master, PSR + PyPI (OIDC Trusted Publisher) + smoke test. Использует `RELEASE_TOKEN` для checkout и PSR.
+**release.yml** — push на master, PSR + PyPI (OIDC Trusted Publisher) + smoke test. Использует GitHub App token (`APP_ID` + `APP_PRIVATE_KEY`) для checkout и PSR.
 
 ---
 
@@ -69,16 +69,15 @@ init_python/
 
 - Только merge (no squash, no rebase)
 - Required status check: `integration` (один контекст, не матрица)
-- Без `bypass_actors` (не работает для personal repos через API)
+- `bypass_actors` — GitHub App добавляется автоматически если задан `GITHUB_APP_ID` в `~/.repokit`
 
 ---
 
 ## Постустановочный чеклист (instructions.sh)
 
-1. `RELEASE_TOKEN` secret в репо — PAT бот-аккаунта, scope `contents: write`
-2. Бот-аккаунту write access к репо
-3. Trusted Publisher на PyPI — workflow: `release.yml`
-4. Trusted Publisher на TestPyPI — workflow: `integration.yml`
+1. `APP_ID` и `APP_PRIVATE_KEY` secrets в репо — GitHub App credentials
+2. Trusted Publisher на PyPI — workflow: `release.yml`
+3. Trusted Publisher на TestPyPI — workflow: `integration.yml`
 
 ---
 
