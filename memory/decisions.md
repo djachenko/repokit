@@ -20,9 +20,9 @@ Workflow-файлы и pyproject.toml живут в `templates/` как наст
 
 Проекты без юнитов не должны ломать CI. Pytest возвращает exit code 5 если тесты не найдены — обрабатываем явно.
 
-### bypass_actors убран из ruleset
+### bypass_actors: работает с GitHub App token, не работает с GITHUB_TOKEN
 
-Не работает для personal repos через GitHub API — убрали, не добавлять обратно.
+bypass_actors добавляется автоматически если задан `GITHUB_APP_ID` в `~/.repokit`. Работает только если токен при пуше от GitHub App (не от `GITHUB_TOKEN`). Для personal repos через API работает корректно — предыдущее утверждение "не работает" было неверным.
 
 ### required_status_checks: один контекст "integration"
 
