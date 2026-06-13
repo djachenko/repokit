@@ -25,4 +25,6 @@ version_toml = ["pyproject.toml:project.version"]
 branch = "master"
 build_command = "pip install build && python -m build"
 changelog_file = "CHANGELOG.md"
-commit_message = "chore(release): v{version} [skip ci]"
+commit_message = "chore(release): v{version} [no ci]"
+major_on_zero = false
+allow_zero_version = true
