@@ -1,0 +1,11 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  tests:
+    uses: djachenko/repokit/languages/bash/workflows/tests.yml@master
+    secrets: inherit
