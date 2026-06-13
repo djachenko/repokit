@@ -23,16 +23,11 @@ jobs:
       - name: Bump version
         run: cog bump --auto --disable-bump-commit
 
-      - name: Get changelog
-        run: cog changelog > /tmp/changelog.md
-
-      - name: Push tag
-        run: git push origin --tags
-
       - name: Create GitHub release
-        id: version
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           VERSION=$(git describe --tags --abbrev=0)
+          git push origin "$VERSION"
+          cog changelog "$VERSION" > /tmp/changelog.md
           gh release create "$VERSION" --title "$VERSION" --notes-file /tmp/changelog.md

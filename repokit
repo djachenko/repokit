@@ -144,7 +144,6 @@ if git log "$BASE_BRANCH".."$BRANCH" --oneline 2>/dev/null | grep -q .; then
   echo "✓ Done: https://github.com/$OWNER/$REPO"
 else
   git checkout "$BASE_BRANCH"
-  git branch -d "$BRANCH"
   echo ""
   echo "✓ Already up to date"
 fi
