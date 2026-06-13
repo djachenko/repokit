@@ -122,6 +122,7 @@ if [[ "$HAS_REMOTE" == false ]]; then
   fi
 fi
 
+BASE_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 BRANCH="chore/repokit-setup"
 echo "→ Creating branch $BRANCH..."
 git checkout -B "$BRANCH"
@@ -130,15 +131,20 @@ REPOKIT_FORCE=$SKIP_OWNER_CHECK bash "$SCRIPT_DIR/init/workflows.sh"
 bash "$SCRIPT_DIR/languages/$LANGUAGE/setup.sh"
 bash "$SCRIPT_DIR/init/ruleset.sh"
 
-if git log master.."$BRANCH" --oneline 2>/dev/null | grep -q .; then
+if git log "$BASE_BRANCH".."$BRANCH" --oneline 2>/dev/null | grep -q .; then
   git push -u origin "$BRANCH"
   gh pr create \
     --title "chore: [repokit] setup" \
     --body "Automated repository setup by repokit." \
-    --base master
+    --base "$BASE_BRANCH"
+
+  bash "$SCRIPT_DIR/languages/$LANGUAGE/instructions.sh"
+
+  echo ""
+  echo "✓ Done: https://github.com/$OWNER/$REPO"
+else
+  git checkout "$BASE_BRANCH"
+  git branch -d "$BRANCH"
+  echo ""
+  echo "✓ Already up to date"
 fi
-
-bash "$SCRIPT_DIR/languages/$LANGUAGE/instructions.sh"
-
-echo ""
-echo "✓ Done: https://github.com/$OWNER/$REPO"
