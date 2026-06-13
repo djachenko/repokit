@@ -4,8 +4,14 @@ set -e
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
+COMMAND="init"
 LANGUAGE=""
 AVAILABLE_LANGUAGES=$(ls "$SCRIPT_DIR/languages/")
+
+if [[ "$1" == "update" ]]; then
+  COMMAND="update"
+  shift
+fi
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -30,6 +36,10 @@ while [[ $# -gt 0 ]]; do
       echo "  gh   — https://cli.github.com (must be authenticated)"
       echo ""
       echo "First-time setup: run install.sh to add repokit to PATH"
+      echo ""
+      echo "Commands:"
+      echo "  (default)  Initialize a new repository"
+      echo "  update     Sync CI workflows from repokit templates"
       exit 0
       ;;
     --language)
@@ -68,6 +78,12 @@ bash "$SCRIPT_DIR/init/preflight.sh"
 
 export OWNER
 OWNER=$(gh api user --jq '.login')
+
+if [[ "$COMMAND" == "update" ]]; then
+  REPOKIT_FORCE=true bash "$SCRIPT_DIR/init/workflows.sh"
+  echo "✓ Workflows updated"
+  exit 0
+fi
 
 HAS_GIT=false
 git rev-parse --git-dir &> /dev/null && HAS_GIT=true

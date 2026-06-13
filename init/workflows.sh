@@ -11,7 +11,7 @@ for template in "$SCRIPT_DIR/languages/$LANGUAGE/wrappers/"*.yml; do
   name=$(basename "$template")
   dest=".github/workflows/$name"
 
-  if [[ -f "$dest" ]]; then
+  if [[ -f "$dest" && "${REPOKIT_FORCE:-false}" == false ]]; then
     echo "  skip $name (already exists)"
   else
     sed "s/{{REPO}}/$REPO/g" "$template" > "$dest"
