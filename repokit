@@ -6,6 +6,7 @@ SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 COMMAND="init"
 LANGUAGE=""
+SKIP_OWNER_CHECK=false
 AVAILABLE_LANGUAGES=$(ls "$SCRIPT_DIR/languages/")
 
 if [[ "$1" == "update" ]]; then
@@ -46,7 +47,11 @@ while [[ $# -gt 0 ]]; do
       LANGUAGE="$2"
       shift 2
       ;;
-    *)
+    --skip-owner-check)
+      SKIP_OWNER_CHECK=true
+      shift
+      ;;
+*)
       echo "Unknown option: $1"
       exit 1
       ;;
@@ -80,7 +85,7 @@ export OWNER
 OWNER=$(gh api user --jq '.login')
 
 if [[ "$COMMAND" == "update" ]]; then
-  REPOKIT_FORCE=true bash "$SCRIPT_DIR/init/workflows.sh"
+  REPOKIT_FORCE=$SKIP_OWNER_CHECK bash "$SCRIPT_DIR/init/workflows.sh"
   echo "✓ Workflows updated"
   exit 0
 fi
@@ -119,7 +124,7 @@ BRANCH="chore/repokit-setup"
 echo "→ Creating branch $BRANCH..."
 git checkout -b "$BRANCH"
 
-bash "$SCRIPT_DIR/init/workflows.sh"
+REPOKIT_FORCE=$SKIP_OWNER_CHECK bash "$SCRIPT_DIR/init/workflows.sh"
 bash "$SCRIPT_DIR/languages/$LANGUAGE/setup.sh"
 bash "$SCRIPT_DIR/init/ruleset.sh"
 
