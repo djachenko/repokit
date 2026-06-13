@@ -57,6 +57,12 @@ export SCRIPT_DIR
 export LANGUAGE
 export REPO
 REPO=$(basename "$PWD")
+export REPOKIT_AUTHOR="repokit <repokit@djachenko>"
+
+repokit_commit() {
+  git commit -m "chore: [repokit] $1" --author="$REPOKIT_AUTHOR"
+}
+export -f repokit_commit
 
 bash "$SCRIPT_DIR/init/preflight.sh"
 
@@ -84,6 +90,7 @@ fi
 
 if [[ "$HAS_REMOTE" == false ]]; then
   bash "$SCRIPT_DIR/init/remote.sh"
+
   if [[ "$HAS_GIT" == false ]]; then
     bash "$SCRIPT_DIR/init/commit.sh"
   else
@@ -92,17 +99,22 @@ if [[ "$HAS_REMOTE" == false ]]; then
   fi
 fi
 
+BRANCH="chore/repokit-setup"
+echo "→ Creating branch $BRANCH..."
+git checkout -b "$BRANCH"
+
 bash "$SCRIPT_DIR/init/workflows.sh"
 bash "$SCRIPT_DIR/languages/$LANGUAGE/setup.sh"
+bash "$SCRIPT_DIR/init/ruleset.sh"
 
-if ! git diff --quiet || ! git diff --cached --quiet || git ls-files --others --exclude-standard | grep -q .; then
-  echo "→ Committing configuration..."
-  git add .
-  git commit -m "chore: repokit setup"
-  git push
+if git log master.."$BRANCH" --oneline 2>/dev/null | grep -q .; then
+  git push -u origin "$BRANCH"
+  gh pr create \
+    --title "chore: [repokit] setup" \
+    --body "Automated repository setup by repokit." \
+    --base master
 fi
 
-bash "$SCRIPT_DIR/init/ruleset.sh"
 bash "$SCRIPT_DIR/languages/$LANGUAGE/instructions.sh"
 
 echo ""

@@ -5,5 +5,5 @@ set -e
 echo "→ Committing..."
 
 git add .
-git commit -m "chore: initial setup"
+repokit_commit "initial setup"
 git push -u origin master
