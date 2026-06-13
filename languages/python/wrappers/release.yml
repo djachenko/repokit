@@ -1,0 +1,16 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  release:
+    uses: djachenko/repokit/languages/python/workflows/release.yml@master
+    with:
+      package_name: {{REPO}}
+    secrets: inherit
+    permissions:
+      id-token: write
+      contents: write

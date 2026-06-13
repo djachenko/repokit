@@ -1,0 +1,11 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  release:
+    uses: djachenko/repokit/languages/bash/workflows/release.yml@master
+    secrets: inherit
