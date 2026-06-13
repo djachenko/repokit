@@ -14,7 +14,7 @@ fi
 gh api "repos/$OWNER/$REPO/rulesets" \
   --method POST \
   --header "Content-Type: application/json" \
-  --input - << EOF
+  --input - > /dev/null << EOF
 {
   "name": "$RULESET_NAME",
   "target": "branch",

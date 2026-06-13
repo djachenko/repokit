@@ -28,5 +28,7 @@ done
 if [[ ${#written[@]} -gt 0 ]]; then
   git add "${written[@]}"
 
-  repokit_commit "add ci workflows"
+  if ! git diff --cached --quiet; then
+    repokit_commit "update ci workflows"
+  fi
 fi
