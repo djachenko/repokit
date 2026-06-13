@@ -101,28 +101,30 @@ if [[ "$HAS_GIT" == false && "$HAS_REMOTE" == true ]]; then
   exit 1
 fi
 
-echo "Init repo '$OWNER/$REPO' in $(pwd)? [y/N]"
-read -r answer
-[[ "$answer" == "y" ]] || exit 0
-
 if [[ "$HAS_GIT" == false ]]; then
+  echo "Init git in $(pwd)? [y/N]"
+  read -r answer
+  [[ "$answer" == "y" ]] || exit 0
   bash "$SCRIPT_DIR/init/git_init.sh"
 fi
 
 if [[ "$HAS_REMOTE" == false ]]; then
+  echo "Create GitHub repo '$OWNER/$REPO'? [y/N]"
+  read -r answer
+  [[ "$answer" == "y" ]] || exit 0
   bash "$SCRIPT_DIR/init/remote.sh"
 
-  if [[ "$HAS_GIT" == false ]]; then
-    bash "$SCRIPT_DIR/init/commit.sh"
-  else
+  if git log --oneline 2> /dev/null | grep -q .; then
     echo "→ Pushing existing history..."
     git push -u origin master
+  else
+    bash "$SCRIPT_DIR/init/commit.sh"
   fi
 fi
 
 BRANCH="chore/repokit-setup"
 echo "→ Creating branch $BRANCH..."
-git checkout -b "$BRANCH"
+git checkout -B "$BRANCH"
 
 REPOKIT_FORCE=$SKIP_OWNER_CHECK bash "$SCRIPT_DIR/init/workflows.sh"
 bash "$SCRIPT_DIR/languages/$LANGUAGE/setup.sh"
