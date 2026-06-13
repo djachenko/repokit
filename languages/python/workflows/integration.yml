@@ -1,9 +1,11 @@
 name: Integration
 
 on:
-  pull_request:
-    branches:
-      - master
+  workflow_call:
+    inputs:
+      package_name:
+        required: true
+        type: string
 
 jobs:
   test:
@@ -71,6 +73,7 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
+          skip-existing: true
 
       - name: Smoke test
         run: |
@@ -79,5 +82,5 @@ jobs:
           with open('pyproject.toml', 'rb') as f:
               print(tomllib.load(f)['project']['version'])
           ")
-          pip install --index-url https://test.pypi.org/simple/ --no-deps {{REPO}}==$VERSION
-          {{REPO}} --help
+          pip install --index-url https://test.pypi.org/simple/ --no-deps ${{ inputs.package_name }}==$VERSION
+          ${{ inputs.package_name }} --help

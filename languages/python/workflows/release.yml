@@ -1,9 +1,11 @@
 name: Release
 
 on:
-  push:
-    branches:
-      - master
+  workflow_call:
+    inputs:
+      package_name:
+        required: true
+        type: string
 
 jobs:
   release:
@@ -14,21 +16,48 @@ jobs:
       contents: write
 
     steps:
+      - uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-          token: ${{ secrets.RELEASE_TOKEN }}
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
           python-version: "3.x"
 
-      - name: Python Semantic Release
+      - name: Install dependencies
+        run: pip install ".[release]"
+
+      - name: Configure git
+        run: |
+          git config user.name "semantic-release"
+          git config user.email "semantic-release@users.noreply.github.com"
+
+      - name: Run semantic release
         id: release
-        uses: python-semantic-release/python-semantic-release@v10.5.3
-        with:
-          github_token: ${{ secrets.RELEASE_TOKEN }}
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          BEFORE=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          semantic-release version
+          AFTER=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ "$BEFORE" != "$AFTER" ]; then
+            echo "released=true" >> $GITHUB_OUTPUT
+            echo "version=${AFTER#v}" >> $GITHUB_OUTPUT
+          else
+            echo "released=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build
+        if: steps.release.outputs.released == 'true'
+        run: python -m build
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
@@ -40,9 +69,9 @@ jobs:
           VERSION=${{ steps.release.outputs.version }}
 
           for i in {1..5}; do
-            pip install {{REPO}}==$VERSION && break
+            pip install ${{ inputs.package_name }}==$VERSION && break
             echo "Attempt $i failed, retrying in 10s..."
             sleep 10
           done
 
-          {{REPO}} --help
+          ${{ inputs.package_name }} --help

@@ -1,0 +1,15 @@
+name: Integration
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  integration:
+    uses: djachenko/repokit/languages/python/workflows/integration.yml@master
+    with:
+      package_name: {{REPO}}
+    secrets: inherit
+    permissions:
+      id-token: write
