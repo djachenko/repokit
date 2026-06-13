@@ -6,12 +6,20 @@ echo "→ Writing workflows..."
 
 mkdir -p .github/workflows
 
-for tpl in "$SCRIPT_DIR/languages/$LANGUAGE/workflows/"*.yml; do
-  name=$(basename "$tpl")
+written=()
+for template in "$SCRIPT_DIR/languages/$LANGUAGE/wrappers/"*.yml; do
+  name=$(basename "$template")
   dest=".github/workflows/$name"
+
   if [[ -f "$dest" ]]; then
     echo "  skip $name (already exists)"
   else
-    sed "s/{{REPO}}/$REPO/g" "$tpl" > "$dest"
+    sed "s/{{REPO}}/$REPO/g" "$template" > "$dest"
+    written+=("$dest")
   fi
 done
+
+if [[ ${#written[@]} -gt 0 ]]; then
+  git add "${written[@]}"
+  repokit_commit "add ci workflows"
+fi
