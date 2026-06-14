@@ -19,6 +19,8 @@ curl -fsSL "$TARBALL_URL" | tar xz -C "$TMP"
 echo "Installing to $INSTALL_DIR..."
 rm -rf "$INSTALL_DIR"
 mv "$TMP"/repokit-"$VERSION" "$INSTALL_DIR"
+rm -f "$INSTALL_DIR/install.sh"
+rm -rf "$INSTALL_DIR/.github" "$INSTALL_DIR/memory"
 chmod +x "$INSTALL_DIR/repokit" "$INSTALL_DIR"/init/*.sh "$INSTALL_DIR"/hooks/*
 
 LINE="export PATH=\"$INSTALL_DIR:\$PATH\""
