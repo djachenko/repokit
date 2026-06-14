@@ -40,7 +40,7 @@ while [[ $# -gt 0 ]]; do
       echo ""
       echo "Commands:"
       echo "  (default)  Initialize a new repository"
-      echo "  update     Sync CI workflows from repokit templates"
+      echo "  update     Update repokit to the latest release"
       exit 0
       ;;
     --language)
@@ -57,6 +57,11 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+if [[ "$COMMAND" == "update" ]]; then
+  curl -fsSL "https://raw.githubusercontent.com/djachenko/repokit/master/install.sh" | bash
+  exit 0
+fi
 
 if [[ -z "$LANGUAGE" ]]; then
   echo "Error: --language is required. Available: $(echo "$AVAILABLE_LANGUAGES" | tr '\n' ' ')"
@@ -83,12 +88,6 @@ bash "$SCRIPT_DIR/init/preflight.sh"
 
 export OWNER
 OWNER=$(gh api user --jq '.login')
-
-if [[ "$COMMAND" == "update" ]]; then
-  REPOKIT_FORCE=$SKIP_OWNER_CHECK bash "$SCRIPT_DIR/init/workflows.sh"
-  echo "✓ Workflows updated"
-  exit 0
-fi
 
 HAS_GIT=false
 git rev-parse --git-dir &> /dev/null && HAS_GIT=true
