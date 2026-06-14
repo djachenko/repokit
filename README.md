@@ -19,7 +19,7 @@ Runs a linear pipeline with gate checks at each step:
 
 CI logic lives in repokit, not in the target repo. Each language has:
 
-- `languages/<name>/workflows/` — reusable workflows (`workflow_call`), called remotely
+- `.github/workflows/<lang>-*.yml` — reusable workflows (`workflow_call`), logic lives here
 - `languages/<name>/wrappers/` — thin trigger wrappers copied into the target repo
 
 When repokit is updated, all repos using its shared workflows pick up the changes automatically — no need to update individual repos.
@@ -41,7 +41,7 @@ Applied to the default branch. Nobody can push directly — all changes go throu
 - No branch deletion
 - No force push
 - PR required to merge; only merge commits allowed (no squash, no rebase)
-- Required status check: `integration` must pass before merge
+- Required status check: `integration / integration` must pass before merge
 
 ## Requirements
 
@@ -75,10 +75,12 @@ GitHub owner is taken from `gh auth`.
 Create a folder under `languages/` — it will be picked up automatically:
 
 ```
+.github/workflows/
+└── <name>-*.yml     # reusable workflows (workflow_call), logic lives here
+
 languages/<name>/
-├── workflows/    # reusable workflows (workflow_call), logic lives here
-├── wrappers/     # thin trigger wrappers, copied into target repos
-├── setup.sh      # language-specific setup (required, can be empty)
+├── wrappers/        # thin trigger wrappers, copied into target repos
+├── setup.sh         # language-specific setup (required, can be empty)
 └── instructions.sh  # post-setup checklist printed to user
 ```
 
@@ -97,8 +99,8 @@ languages/<name>/
 **Post-setup checklist:**
 
 1. Add GitHub App secrets: `APP_ID`, `APP_PRIVATE_KEY`
-2. Add Trusted Publisher on [PyPI](https://pypi.org/manage/account/publishing/) — workflow: `languages/python/workflows/release.yml` in `djachenko/repokit`
-3. Add Trusted Publisher on [TestPyPI](https://test.pypi.org/manage/account/publishing/) — workflow: `languages/python/workflows/integration.yml` in `djachenko/repokit`
+2. Add Trusted Publisher on [PyPI](https://pypi.org/manage/account/publishing/) — workflow: `.github/workflows/python-release.yml` in `djachenko/repokit`
+3. Add Trusted Publisher on [TestPyPI](https://test.pypi.org/manage/account/publishing/) — workflow: `.github/workflows/python-integration.yml` in `djachenko/repokit`
 
 ---
 
