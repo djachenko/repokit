@@ -7,29 +7,5 @@ on:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
-    concurrency: release
-    permissions:
-      contents: write
-
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - uses: cocogitto/cocogitto-action@v3
-        with:
-          git-user: repokit
-          git-user-email: repokit@djachenko
-
-      - name: Bump version
-        run: cog bump --auto --disable-bump-commit
-
-      - name: Create GitHub release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          VERSION=$(git describe --tags --abbrev=0)
-          git push origin "$VERSION"
-          cog changelog "$VERSION" > /tmp/changelog.md
-          gh release create "$VERSION" --title "$VERSION" --notes-file /tmp/changelog.md
+    uses: djachenko/repokit/.github/workflows/bash-release.yml@master
+    secrets: inherit
