@@ -7,5 +7,7 @@ on:
 
 jobs:
   integration:
-    uses: djachenko/repokit/.github/workflows/bash-integration.yml@master
-    secrets: inherit
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
