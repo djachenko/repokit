@@ -4,15 +4,9 @@ set -e
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
-COMMAND="init"
 LANGUAGE=""
 SKIP_OWNER_CHECK=false
 AVAILABLE_LANGUAGES=$(ls "$SCRIPT_DIR/languages/")
-
-if [[ "$1" == "update" ]]; then
-  COMMAND="update"
-  shift
-fi
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -35,12 +29,6 @@ while [[ $# -gt 0 ]]; do
       echo "Requirements:"
       echo "  git  — https://git-scm.com"
       echo "  gh   — https://cli.github.com (must be authenticated)"
-      echo ""
-      echo "First-time setup: run install.sh to add repokit to PATH"
-      echo ""
-      echo "Commands:"
-      echo "  (default)  Initialize a new repository"
-      echo "  update     Update repokit to the latest release"
       exit 0
       ;;
     --language)
@@ -57,11 +45,6 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
-
-if [[ "$COMMAND" == "update" ]]; then
-  curl -fsSL "https://raw.githubusercontent.com/djachenko/repokit/master/install.sh" | bash
-  exit 0
-fi
 
 if [[ -z "$LANGUAGE" ]]; then
   echo "Error: --language is required. Available: $(echo "$AVAILABLE_LANGUAGES" | tr '\n' ' ')"
