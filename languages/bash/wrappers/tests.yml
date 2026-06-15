@@ -7,5 +7,5 @@ on:
 
 jobs:
   tests:
-    uses: djachenko/repokit/.github/workflows/bash-tests.yml@master
+    uses: djachenko/repokit/.github/workflows/bash-tests.yml@{{VERSION}}
     secrets: inherit

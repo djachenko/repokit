@@ -23,6 +23,16 @@ jobs:
       - name: Bump version
         run: cog bump --auto --disable-bump-commit
 
+      - name: Update wrapper templates
+        run: |
+          VERSION=$(git describe --tags --abbrev=0)
+          sed -i "s/@[0-9][0-9a-zA-Z._-]*/@$VERSION/g" languages/*/wrappers/*.yml
+          git add languages/*/wrappers/*.yml
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: [repokit] bump wrappers to $VERSION" --author="repokit <repokit@djachenko>"
+            git tag -f "$VERSION"
+          fi
+
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
