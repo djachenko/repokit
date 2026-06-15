@@ -15,13 +15,18 @@ for template in "$SCRIPT_DIR/languages/$LANGUAGE/wrappers/"*.yml; do
   if [[ -f "$dest" && "${REPOKIT_FORCE:-false}" == false ]]; then
     last_author=$(git log --format="%ae" -1 -- "$dest" 2> /dev/null)
     if [[ "$last_author" != "repokit@djachenko" ]]; then
-      echo "  skip $name (modified by user)"
+      echo "  skip $name (modified by user) — rerun with --skip-owner-check to overwrite"
       continue
     fi
   fi
 
-  REPOKIT_VERSION=$(cat "$SCRIPT_DIR/VERSION" 2> /dev/null || echo "master")
-  sed "s/{{REPO}}/$REPO/g;s/{{VERSION}}/$REPOKIT_VERSION/g" "$template" > "$dest"
+  REPOKIT_FULL=$(cat "$SCRIPT_DIR/VERSION" 2> /dev/null || echo "master")
+  if [[ "$REPOKIT_FULL" == "master" ]]; then
+    REPOKIT_REF="master"
+  else
+    REPOKIT_REF=$(echo "$REPOKIT_FULL" | cut -d. -f1,2)
+  fi
+  sed "s/{{REPO}}/$REPO/g;s/{{VERSION}}/$REPOKIT_REF/g" "$template" > "$dest"
 
   written+=("$dest")
 done
