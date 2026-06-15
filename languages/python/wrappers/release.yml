@@ -7,7 +7,7 @@ on:
 
 jobs:
   release:
-    uses: djachenko/repokit/.github/workflows/python-release.yml@master
+    uses: djachenko/repokit/.github/workflows/python-release.yml@{{VERSION}}
     with:
       package_name: {{REPO}}
     secrets: inherit

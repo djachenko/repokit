@@ -8,16 +8,22 @@ LANGUAGE=""
 SKIP_OWNER_CHECK=false
 AVAILABLE_LANGUAGES=$(ls "$SCRIPT_DIR/languages/")
 
+if [[ -f .repokit ]]; then
+  LANGUAGE=$(grep '^language=' .repokit | cut -d= -f2)
+fi
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --help|-h)
-      echo "Usage: repokit --language <name>"
+      echo "Usage: repokit [--language <name>]"
       echo ""
       echo "Initializes a GitHub repository in the current directory."
       echo ""
       echo "  1. Create a folder:  mkdir my-repo"
       echo "  2. Enter it:         cd my-repo"
       echo "  3. Run:              repokit --language python"
+      echo ""
+      echo "On subsequent runs --language is optional if .repokit exists in the repo."
       echo ""
       echo "Options:"
       echo "  --language <name>  Language profile to use."
@@ -39,7 +45,7 @@ while [[ $# -gt 0 ]]; do
       SKIP_OWNER_CHECK=true
       shift
       ;;
-*)
+    *)
       echo "Unknown option: $1"
       exit 1
       ;;
@@ -112,6 +118,12 @@ git checkout -B "$BRANCH"
 REPOKIT_FORCE=$SKIP_OWNER_CHECK bash "$SCRIPT_DIR/init/workflows.sh"
 bash "$SCRIPT_DIR/languages/$LANGUAGE/setup.sh"
 bash "$SCRIPT_DIR/init/ruleset.sh"
+
+if [[ ! -f .repokit ]] || [[ "$(grep '^language=' .repokit | cut -d= -f2)" != "$LANGUAGE" ]]; then
+  echo "language=$LANGUAGE" > .repokit
+  git add .repokit
+  repokit_commit "save language config"
+fi
 
 if git log "$BASE_BRANCH".."$BRANCH" --oneline 2>/dev/null | grep -q .; then
   git push -u origin "$BRANCH"
