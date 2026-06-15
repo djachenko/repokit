@@ -27,6 +27,7 @@ jobs:
         run: |
           VERSION=$(git describe --tags --abbrev=0)
           MINOR_TAG=$(echo "$VERSION" | cut -d. -f1,2)
+          MAJOR_TAG=$(echo "$VERSION" | cut -d. -f1)
           sed -i "s/@[0-9][0-9a-zA-Z._-]*/@$MINOR_TAG/g" languages/*/wrappers/*.yml
           git add languages/*/wrappers/*.yml
           if ! git diff --cached --quiet; then
@@ -34,14 +35,17 @@ jobs:
             git tag -f "$VERSION"
           fi
           git tag -f "$MINOR_TAG"
+          git tag -f "$MAJOR_TAG"
 
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          VERSION=$(git describe --tags --abbrev=0)
+          VERSION=$(git tag --sort=-version:refname | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
           MINOR_TAG=$(echo "$VERSION" | cut -d. -f1,2)
+          MAJOR_TAG=$(echo "$VERSION" | cut -d. -f1)
           git push origin "refs/tags/$VERSION"
           git push origin "refs/tags/$MINOR_TAG" --force
+          git push origin "refs/tags/$MAJOR_TAG" --force
           cog changelog "$VERSION" > /tmp/changelog.md
           gh release create "$VERSION" --title "$VERSION" --notes-file /tmp/changelog.md
