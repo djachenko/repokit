@@ -39,7 +39,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          VERSION=$(git describe --tags --abbrev=0)
+          VERSION=$(git tag --sort=-version:refname | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
           MINOR_TAG=$(echo "$VERSION" | cut -d. -f1,2)
           git push origin "refs/tags/$VERSION"
           git push origin "refs/tags/$MINOR_TAG" --force
