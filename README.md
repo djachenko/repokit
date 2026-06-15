@@ -57,8 +57,6 @@ curl -fsSL https://raw.githubusercontent.com/djachenko/repokit/master/install.sh
 
 Installs to `~/.local/share/repokit` and adds it to `PATH`.
 
-To update later, re-run the same command — it reinstalls the latest release.
-
 ## Usage
 
 ```bash
