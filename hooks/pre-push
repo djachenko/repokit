@@ -19,10 +19,20 @@ while IFS=' ' read -r local_ref local_sha remote_ref remote_sha; do
   bad=$(git log --format="%h %ae %s" $range | awk -v e="$EXPECTED" '$2 != e')
 
   if [[ -n "$bad" ]]; then
-    echo "✗ Commits with wrong author email (expected: $EXPECTED):"
+    if [[ "$(git config repokit.allowForeignAuthors)" == "true" ]]; then
+      continue
+    fi
+
+    echo "⚠ Commits with unexpected author email (expected: $EXPECTED):"
     while IFS= read -r line; do
       echo "  $line"
     done <<< "$bad"
-    exit 1
+    echo ""
+    printf "Push anyway? [y/N] " > /dev/tty
+    read -r answer < /dev/tty
+    if [[ "$answer" != "y" ]]; then
+      echo "Aborted. To skip this check: git config repokit.allowForeignAuthors true"
+      exit 1
+    fi
   fi
 done
