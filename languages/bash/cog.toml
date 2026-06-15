@@ -1,0 +1,11 @@
+# Required for the release pipeline to work correctly.
+# Without this, merge commits are parsed as conventional commits and
+# may trigger unintended version bumps (e.g. a merge PR bumps minor).
+ignore_merge_commits = true
+
+[changelog]
+# By default cocogitto appends commit author names to each changelog entry.
+# An empty list disables this — release notes stay clean when commits come
+# from a mix of humans and bots (e.g. repokit, dependabot).
+# Remove this section to restore the default behaviour.
+authors = []
