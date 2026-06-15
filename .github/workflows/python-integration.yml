@@ -28,6 +28,7 @@ jobs:
         run: pip install -e ".[test]"
 
       - name: Run tests
+        shell: bash
         run: pytest || [ $? -eq 5 ]
 
   integration:
