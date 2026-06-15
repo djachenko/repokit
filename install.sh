@@ -21,6 +21,7 @@ rm -rf "$INSTALL_DIR"
 mv "$TMP"/repokit-"$VERSION" "$INSTALL_DIR"
 rm -f "$INSTALL_DIR/install.sh"
 rm -rf "$INSTALL_DIR/.github" "$INSTALL_DIR/memory"
+echo "$VERSION" > "$INSTALL_DIR/VERSION"
 chmod +x "$INSTALL_DIR/repokit" "$INSTALL_DIR"/init/*.sh "$INSTALL_DIR"/hooks/*
 
 LINE="export PATH=\"$INSTALL_DIR:\$PATH\""
@@ -44,3 +45,4 @@ if [[ -n "$OWNER_EMAIL" ]]; then
 fi
 
 echo "Done. Run: repokit --help"
+echo "To update later: re-run the install command from https://github.com/djachenko/repokit"

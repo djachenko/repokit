@@ -20,7 +20,8 @@ for template in "$SCRIPT_DIR/languages/$LANGUAGE/wrappers/"*.yml; do
     fi
   fi
 
-  sed "s/{{REPO}}/$REPO/g" "$template" > "$dest"
+  REPOKIT_VERSION=$(cat "$SCRIPT_DIR/VERSION" 2> /dev/null || echo "master")
+  sed "s/{{REPO}}/$REPO/g;s/{{VERSION}}/$REPOKIT_VERSION/g" "$template" > "$dest"
 
   written+=("$dest")
 done
