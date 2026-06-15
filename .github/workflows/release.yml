@@ -9,3 +9,5 @@ jobs:
   release:
     uses: djachenko/repokit/.github/workflows/bash-release.yml@master
     secrets: inherit
+    permissions:
+      contents: write
