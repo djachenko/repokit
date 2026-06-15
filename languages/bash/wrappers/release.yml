@@ -10,5 +10,5 @@ permissions:
 
 jobs:
   release:
-    uses: djachenko/repokit/.github/workflows/bash-release.yml@master
+    uses: djachenko/repokit/.github/workflows/bash-release.yml@{{VERSION}}
     secrets: inherit
