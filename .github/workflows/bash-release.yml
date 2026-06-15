@@ -41,6 +41,7 @@ jobs:
         run: |
           VERSION=$(git describe --tags --abbrev=0)
           MINOR_TAG=$(echo "$VERSION" | cut -d. -f1,2)
-          git push origin "$VERSION" "$MINOR_TAG" --force
+          git push origin "refs/tags/$VERSION"
+          git push origin "refs/tags/$MINOR_TAG" --force
           cog changelog "$VERSION" > /tmp/changelog.md
           gh release create "$VERSION" --title "$VERSION" --notes-file /tmp/changelog.md
