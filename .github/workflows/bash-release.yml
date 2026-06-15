@@ -26,18 +26,21 @@ jobs:
       - name: Update wrapper templates
         run: |
           VERSION=$(git describe --tags --abbrev=0)
-          sed -i "s/@[0-9][0-9a-zA-Z._-]*/@$VERSION/g" languages/*/wrappers/*.yml
+          MINOR_TAG=$(echo "$VERSION" | cut -d. -f1,2)
+          sed -i "s/@[0-9][0-9a-zA-Z._-]*/@$MINOR_TAG/g" languages/*/wrappers/*.yml
           git add languages/*/wrappers/*.yml
           if ! git diff --cached --quiet; then
-            git commit -m "chore: [repokit] bump wrappers to $VERSION" --author="repokit <repokit@djachenko>"
+            git commit -m "chore: [repokit] bump wrappers to $MINOR_TAG" --author="repokit <repokit@djachenko>"
             git tag -f "$VERSION"
           fi
+          git tag -f "$MINOR_TAG"
 
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           VERSION=$(git describe --tags --abbrev=0)
-          git push origin "$VERSION"
+          MINOR_TAG=$(echo "$VERSION" | cut -d. -f1,2)
+          git push origin "$VERSION" "$MINOR_TAG" --force
           cog changelog "$VERSION" > /tmp/changelog.md
           gh release create "$VERSION" --title "$VERSION" --notes-file /tmp/changelog.md
