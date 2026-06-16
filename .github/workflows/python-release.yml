@@ -2,6 +2,10 @@ name: Release
 
 on:
   workflow_call:
+    outputs:
+      released:
+        description: "Whether a new version was released"
+        value: ${{ jobs.release.outputs.released }}
 
 jobs:
   release:
@@ -9,9 +13,11 @@ jobs:
     concurrency: release
     permissions:
       contents: write
+    outputs:
+      released: ${{ steps.release.outputs.released }}
 
     steps:
-      - uses: actions/create-github-app-token@v1
+      - uses: actions/create-github-app-token@v3
         id: app-token
         with:
           app-id: ${{ secrets.APP_ID }}
@@ -56,7 +62,7 @@ jobs:
 
       - name: Upload dist
         if: steps.release.outputs.released == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dist
           path: dist/
