@@ -8,8 +8,6 @@ on:
 jobs:
   integration:
     uses: djachenko/repokit/.github/workflows/python-integration.yml@{{VERSION}}
-    with:
-      package_name: {{REPO}}
     secrets: inherit
 
   publish:
@@ -32,6 +30,11 @@ jobs:
 
       - name: Smoke test
         run: |
+          PACKAGE=$(ls dist/*.whl | head -1 | xargs basename | sed 's/-[0-9].*//')
           VERSION=$(ls dist/*.tar.gz | sed 's/.*-\(.*\)\.tar\.gz/\1/')
-          pip install --index-url https://test.pypi.org/simple/ --no-deps {{REPO}}==$VERSION
-          {{REPO}} --help
+          for i in {1..5}; do
+            pip install --index-url https://test.pypi.org/simple/ --no-deps $PACKAGE==$VERSION && break
+            echo "Attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
+          $PACKAGE --help

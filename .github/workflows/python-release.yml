@@ -2,10 +2,6 @@ name: Release
 
 on:
   workflow_call:
-    inputs:
-      package_name:
-        required: true
-        type: string
 
 jobs:
   release:
@@ -59,19 +55,9 @@ jobs:
         if: steps.release.outputs.released == 'true'
         run: python -m build
 
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Upload dist
         if: steps.release.outputs.released == 'true'
-
-      - name: Smoke test (PyPI)
-        if: steps.release.outputs.released == 'true'
-        run: |
-          VERSION=${{ steps.release.outputs.version }}
-
-          for i in {1..5}; do
-            pip install ${{ inputs.package_name }}==$VERSION && break
-            echo "Attempt $i failed, retrying in 10s..."
-            sleep 10
-          done
-
-          ${{ inputs.package_name }} --help
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/

@@ -8,9 +8,36 @@ on:
 jobs:
   release:
     uses: djachenko/repokit/.github/workflows/python-release.yml@{{VERSION}}
-    with:
-      package_name: {{REPO}}
     secrets: inherit
     permissions:
-      id-token: write
       contents: write
+
+  publish:
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+
+    steps:
+      - uses: actions/download-artifact@v4
+        id: download
+        continue-on-error: true
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish to PyPI
+        if: steps.download.outcome == 'success'
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+      - name: Smoke test
+        if: steps.download.outcome == 'success'
+        run: |
+          PACKAGE=$(ls dist/*.whl | head -1 | xargs basename | sed 's/-[0-9].*//')
+          VERSION=$(ls dist/*.tar.gz | sed 's/.*-\(.*\)\.tar\.gz/\1/')
+          for i in {1..5}; do
+            pip install --no-deps $PACKAGE==$VERSION && break
+            echo "Attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
+          $PACKAGE --help

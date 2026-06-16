@@ -2,10 +2,6 @@ name: Integration
 
 on:
   workflow_call:
-    inputs:
-      package_name:
-        required: true
-        type: string
 
 jobs:
   test:
