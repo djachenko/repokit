@@ -34,8 +34,6 @@ jobs:
   integration:
     needs: test
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
 
     steps:
       - uses: actions/checkout@v6
@@ -75,18 +73,8 @@ jobs:
       - name: Build
         run: python -m build
 
-      - name: Publish to TestPyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Upload dist
+        uses: actions/upload-artifact@v4
         with:
-          repository-url: https://test.pypi.org/legacy/
-          skip-existing: true
-
-      - name: Smoke test
-        run: |
-          VERSION=$(python -c "
-          import tomllib
-          with open('pyproject.toml', 'rb') as f:
-              print(tomllib.load(f)['project']['version'])
-          ")
-          pip install --index-url https://test.pypi.org/simple/ --no-deps ${{ inputs.package_name }}==$VERSION
-          ${{ inputs.package_name }} --help
+          name: dist
+          path: dist/

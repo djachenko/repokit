@@ -11,5 +11,27 @@ jobs:
     with:
       package_name: {{REPO}}
     secrets: inherit
+
+  publish:
+    needs: integration
+    runs-on: ubuntu-latest
     permissions:
       id-token: write
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          skip-existing: true
+
+      - name: Smoke test
+        run: |
+          VERSION=$(ls dist/*.tar.gz | sed 's/.*-\(.*\)\.tar\.gz/\1/')
+          pip install --index-url https://test.pypi.org/simple/ --no-deps {{REPO}}==$VERSION
+          {{REPO}} --help
