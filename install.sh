@@ -3,7 +3,7 @@
 set -e
 
 REPO="djachenko/repokit"
-VERSION=$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" | grep '"tag_name"' | cut -d'"' -f4)
+VERSION=$(curl -fsSLI -o /dev/null -w '%{url_effective}' "https://github.com/$REPO/releases/latest" | sed 's|.*/||')
 TARBALL_URL="https://github.com/$REPO/archive/refs/tags/$VERSION.tar.gz"
 INSTALL_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/repokit"
 
