@@ -54,6 +54,11 @@ jobs:
       - name: Install dependencies
         run: pip install ".[release]"
 
+      - name: Configure git
+        run: |
+          git config user.name "repokit"
+          git config user.email "repokit@djachenko"
+
       - name: Bump version (no commit)
         run: semantic-release version --no-commit --no-tag --no-push --no-changelog
 
