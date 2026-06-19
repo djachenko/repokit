@@ -12,7 +12,7 @@ authors = [{ name = "Igor Djachenko" }]
 requires-python = ">=3.10"
 
 [project.optional-dependencies]
-test = ["pytest"]
+test = ["pytest", "ruff", "mypy"]
 release = ["build", "python-semantic-release"]
 
 [project.urls]
