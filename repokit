@@ -5,7 +5,8 @@ set -e
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 LANGUAGE=""
-SKIP_OWNER_CHECK=false
+FORCE_WORKFLOWS=false
+FORCE_PYPROJECT=false
 AVAILABLE_LANGUAGES=$(ls "$SCRIPT_DIR/languages/")
 
 if [[ -f .repokit ]]; then
@@ -15,7 +16,7 @@ fi
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --help|-h)
-      echo "Usage: repokit [--language <name>]"
+      echo "Usage: repokit [--language <name>] [--force-workflows] [--force-pyproject]"
       echo ""
       echo "Initializes a GitHub repository in the current directory."
       echo ""
@@ -26,8 +27,12 @@ while [[ $# -gt 0 ]]; do
       echo "On subsequent runs --language is optional if .repokit exists in the repo."
       echo ""
       echo "Options:"
-      echo "  --language <name>  Language profile to use."
-      echo "                     Available: $(echo "$AVAILABLE_LANGUAGES" | tr '\n' ' ')"
+      echo "  --language <name>    Language profile to use."
+      echo "                       Available: $(echo "$AVAILABLE_LANGUAGES" | tr '\n' ' ')"
+      echo "  --force-workflows    Overwrite workflows even if not repokit-managed;"
+      echo "                       commits under repokit authorship."
+      echo "  --force-pyproject    Overwrite pyproject.toml even if it already exists;"
+      echo "                       commits under repokit authorship."
       echo ""
       echo "Repo name is taken from the current directory name."
       echo "GitHub owner is taken from 'gh auth'."
@@ -41,8 +46,12 @@ while [[ $# -gt 0 ]]; do
       LANGUAGE="$2"
       shift 2
       ;;
-    --skip-owner-check)
-      SKIP_OWNER_CHECK=true
+    --force-workflows)
+      FORCE_WORKFLOWS=true
+      shift
+      ;;
+    --force-pyproject)
+      FORCE_PYPROJECT=true
       shift
       ;;
     *)
@@ -115,8 +124,8 @@ BRANCH="chore/repokit-setup"
 echo "→ Creating branch $BRANCH..."
 git checkout -B "$BRANCH"
 
-REPOKIT_FORCE=$SKIP_OWNER_CHECK bash "$SCRIPT_DIR/init/workflows.sh"
-bash "$SCRIPT_DIR/languages/$LANGUAGE/setup.sh"
+REPOKIT_FORCE=$FORCE_WORKFLOWS bash "$SCRIPT_DIR/init/workflows.sh"
+REPOKIT_FORCE=$FORCE_PYPROJECT bash "$SCRIPT_DIR/languages/$LANGUAGE/setup.sh"
 bash "$SCRIPT_DIR/init/ruleset.sh"
 
 if [[ ! -f .repokit ]] || [[ "$(grep '^language=' .repokit | cut -d= -f2)" != "$LANGUAGE" ]]; then
