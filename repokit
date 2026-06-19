@@ -105,6 +105,15 @@ if [[ "$HAS_GIT" == false ]]; then
   bash "$SCRIPT_DIR/init/git_init.sh"
 fi
 
+if [[ "$HAS_GIT" == true ]]; then
+  remote_url=$(git remote get-url origin 2>/dev/null || true)
+  if [[ "$remote_url" == https://github.com/* ]]; then
+    ssh_url="git@github.com:${remote_url#https://github.com/}"
+    echo "→ Switching remote from HTTPS to SSH..."
+    git remote set-url origin "$ssh_url"
+  fi
+fi
+
 if [[ "$HAS_REMOTE" == false ]]; then
   echo "Create GitHub repo '$OWNER/$REPO'? [y/N]"
   read -r answer
