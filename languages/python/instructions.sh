@@ -9,7 +9,7 @@ echo "│     Permissions: Contents (write), Metadata (read)                    
 echo "│                                                                          │"
 echo "│  2. Add secrets to the repo:                                             │"
 echo "│     https://github.com/$OWNER/$REPO/settings/secrets/actions"
-echo "│     APP_ID       — GitHub App ID                                        │"
+echo "│     APP_CLIENT_ID  — GitHub App Client ID (Iv1.xxx)                     │"
 echo "│     APP_PRIVATE_KEY — GitHub App private key (.pem)                     │"
 echo "│                                                                          │"
 echo "│  3. Add Trusted Publisher on PyPI:                                      │"
