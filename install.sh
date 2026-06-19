@@ -24,13 +24,26 @@ rm -rf "$INSTALL_DIR/.github" "$INSTALL_DIR/memory"
 echo "$VERSION" > "$INSTALL_DIR/VERSION"
 chmod +x "$INSTALL_DIR/repokit" "$INSTALL_DIR"/init/*.sh "$INSTALL_DIR"/hooks/*
 
-LINE="export PATH=\"$INSTALL_DIR:\$PATH\""
-if grep -qF "$INSTALL_DIR" "$SHELL_RC" 2> /dev/null; then
-  echo "Already in PATH ($SHELL_RC)"
-else
-  echo "$LINE" >> "$SHELL_RC"
-  echo "Added to $SHELL_RC. Restart shell or: source $SHELL_RC"
+if grep -q "# BEGIN repokit" "$SHELL_RC" 2> /dev/null; then
+  sed -i '' '/# BEGIN repokit/,/# END repokit/d' "$SHELL_RC"
 fi
+
+cat >> "$SHELL_RC" << EOF
+# BEGIN repokit
+export PATH="$INSTALL_DIR:\$PATH"
+repokit-update() {
+  curl -fsSL https://raw.githubusercontent.com/djachenko/repokit/master/install.sh | bash
+}
+repokit-uninstall() {
+  rm -rf "$INSTALL_DIR"
+  git config --global --unset core.hooksPath 2>/dev/null || true
+  sed -i '' '/# BEGIN repokit/,/# END repokit/d' "$SHELL_RC"
+  echo "repokit uninstalled. Restart your shell."
+}
+# END repokit
+EOF
+
+echo "Added repokit to $SHELL_RC. Restart shell or: source $SHELL_RC"
 
 git config --global core.hooksPath "$INSTALL_DIR/hooks"
 echo "Git hooks configured globally"
@@ -45,4 +58,5 @@ if [[ -n "$OWNER_EMAIL" ]]; then
 fi
 
 echo "Done. Run: repokit --help"
-echo "To update later: re-run the install command from https://github.com/djachenko/repokit"
+echo "To update: repokit-update"
+echo "To uninstall: repokit-uninstall"
