@@ -24,7 +24,7 @@ while [[ $# -gt 0 ]]; do
       echo "  2. Enter it:         cd my-repo"
       echo "  3. Run:              repokit --language python"
       echo ""
-      echo "On subsequent runs --language is optional if .repokit exists in the repo."
+      echo "On subsequent runs --language is optional if .repokit exists locally."
       echo ""
       echo "Options:"
       echo "  --language <name>    Language profile to use."
@@ -105,6 +105,15 @@ if [[ "$HAS_GIT" == false ]]; then
   bash "$SCRIPT_DIR/init/git_init.sh"
 fi
 
+if [[ "$HAS_GIT" == true ]]; then
+  remote_url=$(git remote get-url origin 2>/dev/null || true)
+  if [[ "$remote_url" == https://github.com/* ]]; then
+    ssh_url="git@github.com:${remote_url#https://github.com/}"
+    echo "→ Switching remote from HTTPS to SSH..."
+    git remote set-url origin "$ssh_url"
+  fi
+fi
+
 if [[ "$HAS_REMOTE" == false ]]; then
   echo "Create GitHub repo '$OWNER/$REPO'? [y/N]"
   read -r answer
@@ -119,27 +128,32 @@ if [[ "$HAS_REMOTE" == false ]]; then
   fi
 fi
 
-BASE_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 BRANCH="chore/repokit-setup"
-echo "→ Creating branch $BRANCH..."
-git checkout -B "$BRANCH"
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+if [[ "$CURRENT_BRANCH" == "$BRANCH" ]]; then
+  BASE_BRANCH=$(grep '^base_branch=' .repokit 2>/dev/null | cut -d= -f2)
+  BASE_BRANCH=${BASE_BRANCH:-master}
+else
+  BASE_BRANCH="$CURRENT_BRANCH"
+  echo "→ Creating branch $BRANCH..."
+  git checkout -B "$BRANCH"
+fi
+
+printf 'language=%s\nbase_branch=%s\n' "$LANGUAGE" "$BASE_BRANCH" > .repokit
+grep -qxF '.repokit' .gitignore 2>/dev/null || echo '.repokit' >> .gitignore
 
 REPOKIT_FORCE=$FORCE_WORKFLOWS bash "$SCRIPT_DIR/init/workflows.sh"
 REPOKIT_FORCE=$FORCE_PYPROJECT bash "$SCRIPT_DIR/languages/$LANGUAGE/setup.sh"
 bash "$SCRIPT_DIR/init/ruleset.sh"
-
-if [[ ! -f .repokit ]] || [[ "$(grep '^language=' .repokit | cut -d= -f2)" != "$LANGUAGE" ]]; then
-  echo "language=$LANGUAGE" > .repokit
-  git add .repokit
-  repokit_commit "save language config"
-fi
 
 if git log "$BASE_BRANCH".."$BRANCH" --oneline 2>/dev/null | grep -q .; then
   git push -u origin "$BRANCH"
   gh pr create \
     --title "chore: [repokit] setup" \
     --body "Automated repository setup by repokit." \
-    --base "$BASE_BRANCH"
+    --base "$BASE_BRANCH" && \
+  sed -i '' '/^base_branch=/d' .repokit
 
   bash "$SCRIPT_DIR/languages/$LANGUAGE/instructions.sh"
 
