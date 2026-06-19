@@ -15,7 +15,7 @@ for template in "$SCRIPT_DIR/languages/$LANGUAGE/wrappers/"*.yml; do
   if [[ -f "$dest" && "${REPOKIT_FORCE:-false}" == false ]]; then
     last_author=$(git log --format="%ae" -1 -- "$dest" 2> /dev/null)
     if [[ "$last_author" != "repokit@djachenko" ]]; then
-      echo "  skip $name (modified by user) — rerun with --skip-owner-check to overwrite"
+      echo "  skip $name (not repokit-managed) — rerun with --force-workflows to overwrite"
       continue
     fi
   fi
