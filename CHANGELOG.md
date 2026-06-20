@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file. See [conven
 - - -
 ## 0.5.5 - 2026-06-20
 #### Bug Fixes
+- remove duplicate cog bump step - (41e16fd) - Igor Djachenko
+- use cocogitto-action v4.2.0 with command:bump - (c819798) - Igor Djachenko
+- pin cocogitto-action to v4.1.0 (cog 6.5.0) - (0b0dc1d) - Igor Djachenko
+- update instructions to use APP_CLIENT_ID instead of APP_ID - (2073d7e) - Igor Djachenko
+#### Tests
+- add github app token to bash release - (4218089) - Igor Djachenko
+#### Miscellaneous Chores
+- [repokit] bump wrappers to 0.5 - (06ecb50) - repokit
+
+- - -
+
+## 0.5.5 - 2026-06-20
+#### Bug Fixes
 - update instructions to use APP_CLIENT_ID instead of APP_ID - (2073d7e) - Igor Djachenko
 #### Tests
 - add github app token to bash release - (4218089) - Igor Djachenko
