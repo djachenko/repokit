@@ -2,6 +2,14 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.5.5 - 2026-06-20
+#### Bug Fixes
+- update instructions to use APP_CLIENT_ID instead of APP_ID - (2073d7e) - Igor Djachenko
+#### Tests
+- add github app token to bash release - (4218089) - Igor Djachenko
+
+- - -
+
 ## 0.5.4 - 2026-06-20
 #### Bug Fixes
 - update cocogitto-action to v4.2.0 - (50fb8a7) - Igor Djachenko
