@@ -29,9 +29,6 @@ jobs:
           command: bump
           args: --auto --disable-bump-commit
 
-      - name: Bump version
-        run: cog bump --auto --disable-bump-commit
-
       - name: Update wrapper templates
         run: |
           VERSION=$(git describe --tags --abbrev=0)
