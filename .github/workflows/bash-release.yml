@@ -55,4 +55,5 @@ jobs:
           git push origin "refs/tags/$MINOR_TAG" --force
           git push origin "refs/tags/$MAJOR_TAG" --force
           cog changelog "$VERSION" > /tmp/changelog.md
-          gh release create "$VERSION" --title "$VERSION" --notes-file /tmp/changelog.md
+          gh release create "$VERSION" --title "$VERSION" --notes-file /tmp/changelog.md || \
+            gh release edit "$VERSION" --notes-file /tmp/changelog.md
