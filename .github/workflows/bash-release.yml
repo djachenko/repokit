@@ -15,7 +15,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: cocogitto/cocogitto-action@v4
+      - uses: cocogitto/cocogitto-action@v3
         with:
           git-user: repokit
           git-user-email: repokit@djachenko
