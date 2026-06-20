@@ -15,7 +15,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: cocogitto/cocogitto-action@v4
+      - uses: cocogitto/cocogitto-action@v4.1.0
         with:
           install-only: true
 
