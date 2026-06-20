@@ -11,11 +11,24 @@ jobs:
       contents: write
 
     steps:
-      - uses: tibdex/github-app-token@v2
+      - name: Generate GitHub App token
         id: app-token
-        with:
-          app_id: ${{ secrets.APP_ID }}
-          private_key: ${{ secrets.APP_PRIVATE_KEY }}
+        env:
+          APP_ID: ${{ secrets.APP_ID }}
+          APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
+        run: |
+          now=$(date +%s)
+          iat=$((now - 60))
+          exp=$((now + 540))
+          header=$(echo -n '{"alg":"RS256","typ":"JWT"}' | base64 -w0 | tr '+/' '-_' | tr -d '=')
+          payload=$(echo -n "{\"iat\":${iat},\"exp\":${exp},\"iss\":${APP_ID}}" | base64 -w0 | tr '+/' '-_' | tr -d '=')
+          sig=$(echo -n "${header}.${payload}" | openssl dgst -sha256 -sign <(echo "${APP_PRIVATE_KEY}") | base64 -w0 | tr '+/' '-_' | tr -d '=')
+          jwt="${header}.${payload}.${sig}"
+          installation_id=$(curl -s -H "Authorization: Bearer ${jwt}" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/installation" | jq -r '.id')
+          token=$(curl -s -X POST -H "Authorization: Bearer ${jwt}" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/app/installations/${installation_id}/access_tokens" | jq -r '.token')
+          echo "token=${token}" >> $GITHUB_OUTPUT
 
       - uses: actions/checkout@v6
         with:
