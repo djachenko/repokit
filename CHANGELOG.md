@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.5.2 - 2026-06-20
+#### Bug Fixes
+- add github app bypass actor to branch ruleset - (a363915) - Igor Djachenko
+
+- - -
+
 ## 0.5.1 - 2026-06-20
 #### Bug Fixes
 - use client-id instead of deprecated app-id in github app token - (8b97ebf) - Igor Djachenko
