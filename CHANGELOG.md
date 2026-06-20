@@ -2,6 +2,17 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.5.3 - 2026-06-20
+#### Bug Fixes
+- revert cocogitto-action to v3 - (23464d7) - Igor Djachenko
+- use github token directly, remove github app auth - (bcab6f8) - Igor Djachenko
+- generate github app jwt manually to ensure integer iss claim - (9c5ac11) - Igor Djachenko
+- switch to tibdex/github-app-token for correct integer iss claim - (8f95183) - Igor Djachenko
+- use client-id instead of deprecated app-id in github app token - (c9296bf) - Igor Djachenko
+- push release commit to master via github app token - (7f5bc0b) - Igor Djachenko
+
+- - -
+
 ## 0.5.1 - 2026-06-20
 #### Bug Fixes
 - use client-id instead of deprecated app-id in github app token - (8b97ebf) - Igor Djachenko
