@@ -25,6 +25,9 @@ gh api "repos/$OWNER/$REPO/rulesets" \
       "exclude": []
     }
   },
+  "bypass_actors": [
+    { "actor_id": 2991967, "actor_type": "Integration", "bypass_mode": "always" }
+  ],
   "rules": [
     { "type": "deletion" },
     { "type": "non_fast_forward" },
