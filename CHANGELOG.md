@@ -2,6 +2,14 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.5.4 - 2026-06-20
+#### Bug Fixes
+- update cocogitto-action to v4.2.0 - (50fb8a7) - Igor Djachenko
+- pin cocogitto-action to v4.1.0 for install-only support - (d914e28) - Igor Djachenko
+- adapt to cocogitto-action v4 with install-only flag - (e6cb27b) - Igor Djachenko
+
+- - -
+
 ## 0.5.3 - 2026-06-20
 #### Bug Fixes
 - revert cocogitto-action to v3 - (23464d7) - Igor Djachenko
