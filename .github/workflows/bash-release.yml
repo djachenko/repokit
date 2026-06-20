@@ -22,7 +22,7 @@ jobs:
           fetch-depth: 0
           token: ${{ steps.app-token.outputs.token }}
 
-      - uses: cocogitto/cocogitto-action@v4.2.0
+      - uses: cocogitto/cocogitto-action@v4.1.0
         with:
           install-only: true
 
