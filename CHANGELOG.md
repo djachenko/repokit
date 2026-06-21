@@ -2,6 +2,15 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.5.11 - 2026-06-21
+#### Bug Fixes
+- use create-github-app-token v3 with client-id in python release - (0f0fbbd) - Igor Djachenko
+#### Miscellaneous Chores
+- update release commit message - (91f88c7) - Igor Djachenko
+- write full version in wrapper bump commit message - (940d4be) - Igor Djachenko
+
+- - -
+
 ## 0.5.10 - 2026-06-21
 #### Bug Fixes
 - exclude tag pushes from repokit tests workflow - (6fbee00) - Igor Djachenko
