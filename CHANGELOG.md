@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.5.10 - 2026-06-21
+#### Bug Fixes
+- exclude tag pushes from repokit tests workflow - (6fbee00) - Igor Djachenko
+
+- - -
+
 ## 0.5.9 - 2026-06-21
 #### Bug Fixes
 - exclude tag pushes from tests workflow - (6ba8835) - Igor Djachenko
