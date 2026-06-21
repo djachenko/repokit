@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.5.8 - 2026-06-21
+#### Bug Fixes
+- trigger release test - (baacd1d) - Igor Djachenko
+
+- - -
+
 ## 0.5.7 - 2026-06-20
 #### Bug Fixes
 - handle existing release on gh release create - (9e885da) - Igor Djachenko
