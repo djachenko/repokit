@@ -7,6 +7,12 @@ VERSION=$(curl -fsSLI -o /dev/null -w '%{url_effective}' "https://github.com/$RE
 TARBALL_URL="https://github.com/$REPO/archive/refs/tags/$VERSION.tar.gz"
 INSTALL_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/repokit"
 
+CURRENT=$(cat "$INSTALL_DIR/VERSION" 2> /dev/null || true)
+if [[ "$CURRENT" == "$VERSION" ]]; then
+  echo "Already up to date: repokit $VERSION"
+  exit 0
+fi
+
 SHELL_RC="$HOME/.zshrc"
 [[ "$SHELL" == */bash ]] && SHELL_RC="$HOME/.bashrc"
 
@@ -57,6 +63,6 @@ if [[ -n "$OWNER_EMAIL" ]]; then
   echo "Owner email set: $OWNER_EMAIL"
 fi
 
-echo "Done. Run: repokit --help"
+echo "Done: repokit $VERSION"
 echo "To update: repokit-update"
 echo "To uninstall: repokit-uninstall"
