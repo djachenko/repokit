@@ -2,6 +2,13 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.5.12 - 2026-06-24
+#### Bug Fixes
+- use import check instead of --help in smoke test - (d37eb6f) - Igor Djachenko
+- auto-install type stubs before mypy check - (62419a8) - Igor Djachenko
+
+- - -
+
 ## 0.5.11 - 2026-06-21
 #### Bug Fixes
 - use create-github-app-token v3 with client-id in python release - (0f0fbbd) - Igor Djachenko
