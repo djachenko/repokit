@@ -156,7 +156,7 @@ if git log "$BASE_BRANCH".."$BRANCH" --oneline 2>/dev/null | grep -q .; then
   gh pr create \
     --title "chore: [repokit] setup" \
     --body "Automated repository setup by repokit." \
-    --base "$BASE_BRANCH" && \
+    --base "$BASE_BRANCH" || true
   sed -i '' '/^base_branch=/d' .repokit
 
   bash "$SCRIPT_DIR/languages/$LANGUAGE/instructions.sh"
