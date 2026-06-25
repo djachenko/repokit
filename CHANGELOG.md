@@ -2,6 +2,16 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.6.0 - 2026-06-25
+#### Features
+- skip install if already up to date, print version on done - (4658d59) - Igor Djachenko
+- replace single email check with allowed emails whitelist in pre-push hook - (c69a957) - Igor Djachenko
+#### Bug Fixes
+- commit .gitignore when adding .repokit entry - (1674d87) - Igor Djachenko
+- use OWNER and REPO variables in instructions checklist - (a379c78) - Igor Djachenko
+
+- - -
+
 ## 0.5.12 - 2026-06-24
 #### Bug Fixes
 - use import check instead of --help in smoke test - (d37eb6f) - Igor Djachenko
