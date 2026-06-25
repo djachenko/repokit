@@ -142,6 +142,10 @@ fi
 
 printf 'language=%s\nbase_branch=%s\n' "$LANGUAGE" "$BASE_BRANCH" > .repokit
 grep -qxF '.repokit' .gitignore 2>/dev/null || echo '.repokit' >> .gitignore
+git add .gitignore
+if ! git diff --cached --quiet; then
+  repokit_commit "add .repokit to .gitignore"
+fi
 
 REPOKIT_FORCE=$FORCE_WORKFLOWS bash "$SCRIPT_DIR/init/workflows.sh"
 REPOKIT_FORCE=$FORCE_PYPROJECT bash "$SCRIPT_DIR/languages/$LANGUAGE/setup.sh"
