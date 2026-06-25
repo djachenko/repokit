@@ -1,9 +1,15 @@
 #!/bin/bash
 
-EXPECTED=$(git config user.email)
+USER_EMAIL=$(git config user.email 2>/dev/null || true)
+GLOBAL_ALLOWED=$(git config --global --get-all repokit.allowedEmail 2>/dev/null || true)
 
-if [[ -z "$EXPECTED" ]]; then
-  echo "✗ git user.email is not set"
+ALL_ALLOWED="$GLOBAL_ALLOWED"
+if [[ -n "$USER_EMAIL" ]] && ! echo "$ALL_ALLOWED" | grep -qxF "$USER_EMAIL"; then
+  ALL_ALLOWED="${ALL_ALLOWED:+$ALL_ALLOWED$'\n'}$USER_EMAIL"
+fi
+
+if [[ -z "$ALL_ALLOWED" ]]; then
+  echo "✗ git user.email is not set and repokit.allowedEmail is empty"
   exit 1
 fi
 
@@ -16,14 +22,22 @@ while IFS=' ' read -r local_ref local_sha remote_ref remote_sha; do
 
   [[ -z "$range" ]] && continue
 
-  bad=$(git log --format="%h %ae %s" $range | awk -v e="$EXPECTED" '$2 != e')
+  bad=""
+  while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+    email=$(awk '{print $2}' <<< "$line")
+    if ! echo "$ALL_ALLOWED" | grep -qxF "$email"; then
+      bad+="$line"$'\n'
+    fi
+  done < <(git log --format="%h %ae %s" $range)
+  bad=${bad%$'\n'}
 
   if [[ -n "$bad" ]]; then
     if [[ "$(git config repokit.allowForeignAuthors)" == "true" ]]; then
       continue
     fi
 
-    echo "⚠ Commits with unexpected author email (expected: $EXPECTED):"
+    echo "⚠ Commits with unexpected author email:"
     while IFS= read -r line; do
       echo "  $line"
     done <<< "$bad"
