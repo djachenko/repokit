@@ -10,7 +10,7 @@ jobs:
       python-versions: ${{ steps.versions.outputs.versions }}
     steps:
       - uses: actions/checkout@v6
-      - uses: djachenko/repokit/.github/actions/python-versions@0.6
+      - uses: djachenko/repokit/.github/actions/python-versions@0.7
         id: versions
 
   test:
