@@ -2,6 +2,23 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.7.0 - 2026-06-26
+#### Features
+- offer Claude skill installation during repokit setup - (2b99048) - Igor Djachenko
+- dynamic Python version matrix from requires-python in pyproject.toml - (358dc26) - Igor Djachenko
+#### Bug Fixes
+- pin python-versions action to minor tag, update on release - (c43b167) - Igor Djachenko
+- correct publish status check context name in ruleset - (37b6d93) - Igor Djachenko
+- require publish job in ruleset status checks - (7ebfe0b) - Igor Djachenko
+- reset setup branch from origin/base to stay up to date - (ec4e344) - Igor Djachenko
+- clean up base_branch from .repokit when PR already exists - (a8ab173) - Igor Djachenko
+#### Refactoring
+- extract python version detection into composite action - (18abfae) - Igor Djachenko
+#### Miscellaneous Chores
+- ignore memory directory without trailing slash - (934642e) - Igor Djachenko
+
+- - -
+
 ## 0.6.0 - 2026-06-25
 #### Features
 - skip install if already up to date, print version on done - (4658d59) - Igor Djachenko
