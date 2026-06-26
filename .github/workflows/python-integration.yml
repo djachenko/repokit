@@ -4,12 +4,42 @@ on:
   workflow_call:
 
 jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      python-versions: ${{ steps.versions.outputs.versions }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Determine Python versions
+        id: versions
+        run: |
+          python3 << 'EOF' >> "$GITHUB_OUTPUT"
+          import json, re
+          import tomllib
+
+          try:
+              with open("pyproject.toml", "rb") as f:
+                  req = tomllib.load(f).get("project", {}).get("requires-python", ">=3.10")
+          except FileNotFoundError:
+              req = ">=3.10"
+
+          m = re.search(r"3\.(\d+)", req)
+          min_minor = int(m.group(1)) if m else 10
+
+          all_versions = ["3.10", "3.11", "3.12", "3.13"]
+          versions = [v for v in all_versions if int(v.split(".")[1]) >= min_minor]
+          versions.append("3.x")
+
+          print("versions=" + json.dumps(versions))
+          EOF
+
   test:
+    needs: setup
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ["3.10", "3.11", "3.12", "3.13", "3.x"]
+        python-version: ${{ fromJson(needs.setup.outputs.python-versions) }}
       fail-fast: false
 
     steps:
