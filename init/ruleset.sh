@@ -50,6 +50,7 @@ gh api "repos/$OWNER/$REPO/rulesets" \
         "do_not_enforce_on_create": false,
         "required_status_checks": [
           { "context": "integration / integration" },
+          { "context": "publish" },
           { "context": "tests / test" }
         ]
       }

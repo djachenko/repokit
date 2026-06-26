@@ -2,9 +2,21 @@
 
 set -e
 
+SKILL_SRC="$SCRIPT_DIR/languages/python/repokit_skill.md"
+SKILL_DST=".claude/skills/repokit.md"
+
 TPL="$SCRIPT_DIR/languages/python/pyproject.toml"
 
 new_content=$(sed "s/{{REPO}}/$REPO/g; s/{{OWNER}}/$OWNER/g" "$TPL")
+
+echo "Create Claude skill for repokit integration? [y/N]"
+read -r answer
+if [[ "$answer" =~ ^[Yy]$ ]]; then
+  mkdir -p .claude/skills
+  cp "$SKILL_SRC" "$SKILL_DST"
+  git add "$SKILL_DST"
+  repokit_commit "add Claude skill for repokit integration"
+fi
 
 if [[ -f "pyproject.toml" && "${REPOKIT_FORCE:-false}" == false ]]; then
   if [[ "$new_content" != "$(cat pyproject.toml)" ]]; then
