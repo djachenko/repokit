@@ -1,0 +1,15 @@
+name: Get Python versions
+description: Reads requires-python from pyproject.toml and returns a filtered version list
+
+outputs:
+  versions:
+    description: JSON array of Python versions to test against
+    value: ${{ steps.versions.outputs.versions }}
+
+runs:
+  using: composite
+  steps:
+    - name: Determine Python versions
+      id: versions
+      shell: bash
+      run: python3 "${{ github.action_path }}/get_versions.py" >> "$GITHUB_OUTPUT"

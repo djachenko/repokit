@@ -4,12 +4,22 @@ on:
   workflow_call:
 
 jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      python-versions: ${{ steps.versions.outputs.versions }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: djachenko/repokit/.github/actions/python-versions@0.6
+        id: versions
+
   test:
+    needs: setup
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ["3.10", "3.11", "3.12", "3.13", "3.x"]
+        python-version: ${{ fromJson(needs.setup.outputs.python-versions) }}
       fail-fast: false
 
     steps:
