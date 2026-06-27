@@ -43,7 +43,11 @@ while IFS=' ' read -r local_ref local_sha remote_ref remote_sha; do
 
     echo "⚠ Commits with unexpected author email:"
     while IFS= read -r line; do
-      echo "  $line"
+      [[ -z "$line" ]] && continue
+      hash=$(awk '{print $1}' <<< "$line")
+      email=$(awk '{print $2}' <<< "$line")
+      subject=$(awk '{$1=$2=""; print substr($0,3)}' <<< "$line")
+      echo "  $hash <$email> $subject"
     done <<< "$bad"
     echo ""
     printf "[1] Allow once  [2] Allow always  [3] Deny (default): " > /dev/tty
