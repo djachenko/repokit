@@ -67,6 +67,10 @@ if [[ -n "$OWNER_EMAIL" ]]; then
   echo "Owner email set: $OWNER_EMAIL"
 fi
 
-echo "Done: repokit $VERSION"
+if [[ -n "$CURRENT" ]]; then
+  echo "Updated: repokit $CURRENT → $VERSION"
+else
+  echo "Installed: repokit $VERSION"
+fi
 echo "To update: repokit-update"
 echo "To uninstall: repokit-uninstall"
