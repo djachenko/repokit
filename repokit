@@ -15,6 +15,11 @@ fi
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --version|-v)
+      VERSION=$(cat "$SCRIPT_DIR/VERSION" 2>/dev/null || echo "unknown")
+      echo "repokit $VERSION"
+      exit 0
+      ;;
     --help|-h)
       echo "Usage: repokit [--language <name>] [--force-workflows] [--force-pyproject]"
       echo ""
@@ -82,6 +87,15 @@ repokit_commit() {
 }
 export -f repokit_commit
 
+# ask_yn "Question?" → returns 0 (yes) or 1 (no)
+ask_yn() {
+  echo -n "$1 [y/N] "
+  read -rn 1 answer
+  echo
+  [[ "$answer" =~ ^[Yy]$ ]]
+}
+export -f ask_yn
+
 bash "$SCRIPT_DIR/init/preflight.sh"
 
 export OWNER
@@ -99,9 +113,7 @@ if [[ "$HAS_GIT" == false && "$HAS_REMOTE" == true ]]; then
 fi
 
 if [[ "$HAS_GIT" == false ]]; then
-  echo "Init git in $(pwd)? [y/N]"
-  read -r answer
-  [[ "$answer" == "y" ]] || exit 0
+  ask_yn "Init git in $(pwd)?" || exit 0
   bash "$SCRIPT_DIR/init/git_init.sh"
 fi
 
@@ -115,9 +127,7 @@ if [[ "$HAS_GIT" == true ]]; then
 fi
 
 if [[ "$HAS_REMOTE" == false ]]; then
-  echo "Create GitHub repo '$OWNER/$REPO'? [y/N]"
-  read -r answer
-  [[ "$answer" == "y" ]] || exit 0
+  ask_yn "Create GitHub repo '$OWNER/$REPO'?" || exit 0
   bash "$SCRIPT_DIR/init/remote.sh"
 
   if git log --oneline 2> /dev/null | grep -q .; then
