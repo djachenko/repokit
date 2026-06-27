@@ -15,6 +15,11 @@ fi
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --version|-v)
+      VERSION=$(cat "$SCRIPT_DIR/VERSION" 2>/dev/null || echo "unknown")
+      echo "repokit $VERSION"
+      exit 0
+      ;;
     --help|-h)
       echo "Usage: repokit [--language <name>] [--force-workflows] [--force-pyproject]"
       echo ""
