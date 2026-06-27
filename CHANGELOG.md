@@ -2,6 +2,16 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.8.0 - 2026-06-27
+#### Features
+- store allowed emails in local git config instead of global - (0390dfd) - Igor Djachenko
+- add allow once/allow always/deny prompt for unknown author emails - (f8c0259) - Igor Djachenko
+#### Bug Fixes
+- include python-integration.yml in release version update - (4e3c802) - Igor Djachenko
+- use python regex to robustly remove repokit block from shell rc - (15614eb) - Igor Djachenko
+
+- - -
+
 ## 0.7.0 - 2026-06-26
 #### Features
 - offer Claude skill installation during repokit setup - (2b99048) - Igor Djachenko
