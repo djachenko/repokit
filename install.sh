@@ -30,9 +30,13 @@ rm -rf "$INSTALL_DIR/.github" "$INSTALL_DIR/memory"
 echo "$VERSION" > "$INSTALL_DIR/VERSION"
 chmod +x "$INSTALL_DIR/repokit" "$INSTALL_DIR"/init/*.sh "$INSTALL_DIR"/hooks/*
 
-if grep -q "# BEGIN repokit" "$SHELL_RC" 2> /dev/null; then
-  sed -i '' '/# BEGIN repokit/,/# END repokit/d' "$SHELL_RC"
-fi
+python3 -c "
+import re, pathlib
+p = pathlib.Path('$SHELL_RC')
+t = p.read_text()
+t = re.sub(r'\n?# BEGIN repokit\n.*?# END repokit\n?', '', t, flags=re.DOTALL)
+p.write_text(t)
+" 2> /dev/null || true
 
 cat >> "$SHELL_RC" << EOF
 # BEGIN repokit

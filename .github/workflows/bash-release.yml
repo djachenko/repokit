@@ -35,7 +35,7 @@ jobs:
           MINOR_TAG=$(echo "$VERSION" | cut -d. -f1,2)
           MAJOR_TAG=$(echo "$VERSION" | cut -d. -f1)
           sed -i "s/@[0-9][0-9a-zA-Z._-]*/@$MINOR_TAG/g" languages/*/wrappers/*.yml .github/workflows/python-integration.yml
-          git add languages/*/wrappers/*.yml
+          git add languages/*/wrappers/*.yml .github/workflows/python-integration.yml
           if ! git diff --cached --quiet; then
             git commit -m "chore: release $VERSION" --author="repokit <repokit@djachenko>"
             git tag -f "$VERSION"
