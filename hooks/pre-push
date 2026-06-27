@@ -2,8 +2,12 @@
 
 USER_EMAIL=$(git config user.email 2>/dev/null || true)
 GLOBAL_ALLOWED=$(git config --global --get-all repokit.allowedEmail 2>/dev/null || true)
+LOCAL_ALLOWED=$(git config --local --get-all repokit.allowedEmail 2>/dev/null || true)
 
 ALL_ALLOWED="$GLOBAL_ALLOWED"
+if [[ -n "$LOCAL_ALLOWED" ]]; then
+  ALL_ALLOWED="${ALL_ALLOWED:+$ALL_ALLOWED$'\n'}$LOCAL_ALLOWED"
+fi
 if [[ -n "$USER_EMAIL" ]] && ! echo "$ALL_ALLOWED" | grep -qxF "$USER_EMAIL"; then
   ALL_ALLOWED="${ALL_ALLOWED:+$ALL_ALLOWED$'\n'}$USER_EMAIL"
 fi
@@ -50,9 +54,9 @@ while IFS=' ' read -r local_ref local_sha remote_ref remote_sha; do
         while IFS= read -r line; do
           [[ -z "$line" ]] && continue
           email=$(awk '{print $2}' <<< "$line")
-          if ! git config --global --get-all repokit.allowedEmail 2>/dev/null | grep -qxF "$email"; then
-            git config --global --add repokit.allowedEmail "$email"
-            echo "→ Added $email to repokit.allowedEmail"
+          if ! git config --local --get-all repokit.allowedEmail 2>/dev/null | grep -qxF "$email"; then
+            git config --local --add repokit.allowedEmail "$email"
+            echo "→ Added $email to .git/config (repokit.allowedEmail)"
           fi
         done <<< "$bad"
         ;;
