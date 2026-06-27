@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.9.1 - 2026-06-27
+#### Bug Fixes
+- suppress release re-trigger on bot commit via no-ci marker - (33553e8) - Igor Djachenko
+
+- - -
+
 ## 0.9.0 - 2026-06-27
 #### Features
 - add --version flag and show upgrade delta - (f9efd05) - Igor Djachenko
