@@ -2,6 +2,18 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.9.0 - 2026-06-27
+#### Features
+- add --version flag and show upgrade delta - (f9efd05) - Igor Djachenko
+#### Bug Fixes
+- skip release on bot commits, restore python-integration.yml version update - (ffbe92f) - Igor Djachenko
+#### Refactoring
+- extract ask_yn helper, use read -n 1 for y/N prompts - (cfa3a6d) - Igor Djachenko
+#### Miscellaneous Chores
+- release 0 - (8976377) - repokit
+
+- - -
+
 ## 0.8.0 - 2026-06-27
 #### Features
 - store allowed emails in local git config instead of global - (0390dfd) - Igor Djachenko
