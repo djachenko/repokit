@@ -9,9 +9,7 @@ TPL="$SCRIPT_DIR/languages/python/pyproject.toml"
 
 new_content=$(sed "s/{{REPO}}/$REPO/g; s/{{OWNER}}/$OWNER/g" "$TPL")
 
-echo "Create Claude skill for repokit integration? [y/N]"
-read -r answer
-if [[ "$answer" =~ ^[Yy]$ ]]; then
+if ask_yn "Create Claude skill for repokit integration?"; then
   mkdir -p .claude/skills
   cp "$SKILL_SRC" "$SKILL_DST"
   if git check-ignore -q "$SKILL_DST" 2> /dev/null; then
