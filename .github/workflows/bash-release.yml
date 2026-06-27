@@ -7,7 +7,6 @@ jobs:
   release:
     runs-on: ubuntu-latest
     concurrency: release
-    if: github.event.head_commit.author.email != 'repokit@djachenko'
     permissions:
       contents: write
 
@@ -38,7 +37,7 @@ jobs:
           sed -i "s/@[0-9][0-9a-zA-Z._-]*/@$MINOR_TAG/g" languages/*/wrappers/*.yml .github/workflows/python-integration.yml
           git add languages/*/wrappers/*.yml .github/workflows/python-integration.yml
           if ! git diff --cached --quiet; then
-            git commit -m "chore: release $VERSION" --author="repokit <repokit@djachenko>"
+            git commit -m "chore: release $VERSION [no ci]" --author="repokit <repokit@djachenko>"
             git tag -f "$VERSION"
           fi
           git tag -f "$MINOR_TAG"
