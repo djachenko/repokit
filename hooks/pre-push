@@ -42,11 +42,24 @@ while IFS=' ' read -r local_ref local_sha remote_ref remote_sha; do
       echo "  $line"
     done <<< "$bad"
     echo ""
-    printf "Push anyway? [y/N] " > /dev/tty
+    printf "[1] Allow once  [2] Allow always  [3] Deny (default): " > /dev/tty
     read -r answer < /dev/tty
-    if [[ "$answer" != "y" ]]; then
-      echo "Aborted. To skip this check: git config repokit.allowForeignAuthors true"
-      exit 1
-    fi
+    case "$answer" in
+      1) ;;
+      2)
+        while IFS= read -r line; do
+          [[ -z "$line" ]] && continue
+          email=$(awk '{print $2}' <<< "$line")
+          if ! git config --global --get-all repokit.allowedEmail 2>/dev/null | grep -qxF "$email"; then
+            git config --global --add repokit.allowedEmail "$email"
+            echo "→ Added $email to repokit.allowedEmail"
+          fi
+        done <<< "$bad"
+        ;;
+      *)
+        echo "Aborted."
+        exit 1
+        ;;
+    esac
   fi
 done
