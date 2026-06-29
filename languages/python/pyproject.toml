@@ -24,5 +24,6 @@ Issues = "https://github.com/{{OWNER}}/{{REPO}}/issues"
 version_toml = ["pyproject.toml:project.version"]
 branch = "master"
 commit_message = "chore(release): v{version} [no ci]"
+commit_author = "repokit <repokit@{{OWNER}}>"
 major_on_zero = false
 allow_zero_version = true
