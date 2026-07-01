@@ -58,15 +58,6 @@ echo "Added repokit to $SHELL_RC. Restart shell or: source $SHELL_RC"
 git config --global core.hooksPath "$INSTALL_DIR/hooks"
 echo "Git hooks configured globally"
 
-OWNER_EMAIL=$(gh api user --jq '.email // empty' 2> /dev/null)
-if [[ -z "$OWNER_EMAIL" ]]; then
-  OWNER_EMAIL=$(git config --global user.email)
-fi
-if [[ -n "$OWNER_EMAIL" ]]; then
-  git config --global repokit.ownerEmail "$OWNER_EMAIL"
-  echo "Owner email set: $OWNER_EMAIL"
-fi
-
 if [[ -n "$CURRENT" ]]; then
   echo "Updated: repokit $CURRENT → $VERSION"
 else
