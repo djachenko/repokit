@@ -2,6 +2,17 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.9.2 - 2026-07-01
+#### Bug Fixes
+- use repokit@djachenko as git author in python-release - (b727d1c) - Igor Djachenko
+- set commit_author for python-semantic-release - (03d0fb7) - Igor Djachenko
+#### Revert
+- remove redundant commit_author from pyproject template - (dfac4e2) - Igor Djachenko
+#### Miscellaneous Chores
+- [repokit] setup - (4f4e83b) - Igor Djachenko
+
+- - -
+
 ## 0.9.1 - 2026-06-27
 #### Bug Fixes
 - suppress release re-trigger on bot commit via no-ci marker - (33553e8) - Igor Djachenko
