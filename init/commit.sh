@@ -6,4 +6,4 @@ echo "→ Committing..."
 
 git add .
 repokit_commit "initial setup"
-git push -u origin master
+run_quiet git push -u origin master
