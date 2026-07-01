@@ -26,7 +26,7 @@ echo "Installing to $INSTALL_DIR..."
 rm -rf "$INSTALL_DIR"
 mv "$TMP"/repokit-"$VERSION" "$INSTALL_DIR"
 rm -f "$INSTALL_DIR/install.sh"
-rm -rf "$INSTALL_DIR/.github" "$INSTALL_DIR/memory"
+rm -rf "$INSTALL_DIR/memory"
 echo "$VERSION" > "$INSTALL_DIR/VERSION"
 chmod +x "$INSTALL_DIR/repokit" "$INSTALL_DIR"/init/*.sh "$INSTALL_DIR"/hooks/*
 
