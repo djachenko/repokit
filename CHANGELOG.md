@@ -2,6 +2,15 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.9.4 - 2026-07-01
+#### Bug Fixes
+- avoid non-fast-forward failures re-pushing chore/repokit-setup - (bd45377) - Igor Djachenko
+- suppress noisy git/gh output unless a command fails - (559050c) - Igor Djachenko
+- derive required status checks from generated workflow files - (20712c3) - Igor Djachenko
+- skip re-prompting for repokit skill file when already in sync - (3a1b2d1) - Igor Djachenko
+
+- - -
+
 ## 0.9.3 - 2026-07-01
 #### Bug Fixes
 - remove dead owner-email config that silently kills install.sh under set -e - (f738342) - Igor Djachenko
