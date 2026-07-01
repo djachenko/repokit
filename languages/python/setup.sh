@@ -9,7 +9,17 @@ TPL="$SCRIPT_DIR/languages/python/pyproject.toml"
 
 new_content=$(sed "s/{{REPO}}/$REPO/g; s/{{OWNER}}/$OWNER/g" "$TPL")
 
-if ask_yn "Create Claude skill for repokit integration?"; then
+if [[ -f "$SKILL_DST" ]] && cmp -s "$SKILL_SRC" "$SKILL_DST"; then
+  echo "→ $SKILL_DST is up to date, skipping"
+elif [[ -f "$SKILL_DST" ]]; then
+  cp "$SKILL_SRC" "$SKILL_DST"
+  if git check-ignore -q "$SKILL_DST" 2> /dev/null; then
+    echo "→ Updated $SKILL_DST (not committed: path is gitignored)"
+  else
+    git add "$SKILL_DST"
+    repokit_commit "update Claude skill for repokit integration"
+  fi
+elif ask_yn "Create Claude skill for repokit integration?"; then
   mkdir -p .claude/skills
   cp "$SKILL_SRC" "$SKILL_DST"
   if git check-ignore -q "$SKILL_DST" 2> /dev/null; then
