@@ -3,4 +3,4 @@
 set -e
 
 echo "→ Initializing git..."
-git init
+run_quiet git init

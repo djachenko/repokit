@@ -82,8 +82,20 @@ export REPO
 REPO=$(basename "$PWD")
 export REPOKIT_AUTHOR="repokit <repokit@djachenko>"
 
+# run_quiet <cmd...> → runs a command silently, printing its output only if it fails
+run_quiet() {
+  local out status
+  out=$("$@" 2>&1)
+  status=$?
+  if [[ $status -ne 0 ]]; then
+    printf '%s\n' "$out" >&2
+  fi
+  return $status
+}
+export -f run_quiet
+
 repokit_commit() {
-  git commit -m "chore: [repokit] $1" --author="$REPOKIT_AUTHOR"
+  run_quiet git commit -m "chore: [repokit] $1" --author="$REPOKIT_AUTHOR"
 }
 export -f repokit_commit
 
@@ -122,7 +134,7 @@ if [[ "$HAS_GIT" == true ]]; then
   if [[ "$remote_url" == https://github.com/* ]]; then
     ssh_url="git@github.com:${remote_url#https://github.com/}"
     echo "→ Switching remote from HTTPS to SSH..."
-    git remote set-url origin "$ssh_url"
+    run_quiet git remote set-url origin "$ssh_url"
   fi
 fi
 
@@ -132,7 +144,7 @@ if [[ "$HAS_REMOTE" == false ]]; then
 
   if git log --oneline 2> /dev/null | grep -q .; then
     echo "→ Pushing existing history..."
-    git push -u origin master
+    run_quiet git push -u origin master
   else
     bash "$SCRIPT_DIR/init/commit.sh"
   fi
@@ -149,8 +161,8 @@ else
 fi
 
 echo "→ Creating branch $BRANCH from origin/$BASE_BRANCH..."
-git fetch origin "$BASE_BRANCH"
-git checkout -B "$BRANCH" "origin/$BASE_BRANCH"
+run_quiet git fetch origin "$BASE_BRANCH"
+run_quiet git checkout -B "$BRANCH" "origin/$BASE_BRANCH"
 
 printf 'language=%s\nbase_branch=%s\n' "$LANGUAGE" "$BASE_BRANCH" > .repokit
 grep -qxF '.repokit' .gitignore 2>/dev/null || echo '.repokit' >> .gitignore
@@ -164,7 +176,7 @@ REPOKIT_FORCE=$FORCE_PYPROJECT bash "$SCRIPT_DIR/languages/$LANGUAGE/setup.sh"
 bash "$SCRIPT_DIR/init/ruleset.sh"
 
 if git log "$BASE_BRANCH".."$BRANCH" --oneline 2>/dev/null | grep -q .; then
-  git push -u origin "$BRANCH"
+  run_quiet git push -u origin "$BRANCH"
   gh pr create \
     --title "chore: [repokit] setup" \
     --body "Automated repository setup by repokit." \
