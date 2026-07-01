@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.9.3 - 2026-07-01
+#### Bug Fixes
+- remove dead owner-email config that silently kills install.sh under set -e - (f738342) - Igor Djachenko
+
+- - -
+
 ## 0.9.2 - 2026-07-01
 #### Bug Fixes
 - use repokit@djachenko as git author in python-release - (b727d1c) - Igor Djachenko
