@@ -2,6 +2,16 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.9.7 - 2026-07-03
+#### Bug Fixes
+- use single quotes around git log range to satisfy shellcheck - (dd2f676) - Igor Djachenko
+- clear base_branch unconditionally, stay on setup branch - (dbdfbc8) - Igor Djachenko
+- suppress gh pr create stderr noise - (31d12c2) - Igor Djachenko
+- compare against origin/BASE_BRANCH to avoid spurious push - (f24b555) - Igor Djachenko
+- detect existing remote branch to skip redundant push attempt - (9228cbd) - Igor Djachenko
+
+- - -
+
 ## 0.9.6 - 2026-07-03
 #### Bug Fixes
 - ensure .gitignore ends with newline before appending .repokit - (fe8826a) - Igor Djachenko
