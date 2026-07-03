@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.9.6 - 2026-07-03
+#### Bug Fixes
+- ensure .gitignore ends with newline before appending .repokit - (fe8826a) - Igor Djachenko
+
+- - -
+
 ## 0.9.5 - 2026-07-01
 #### Bug Fixes
 - keep .github in installed copy so ruleset.sh can resolve reusable workflows - (d53189f) - Igor Djachenko
