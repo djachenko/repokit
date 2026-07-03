@@ -187,7 +187,7 @@ REPOKIT_FORCE=$FORCE_WORKFLOWS bash "$SCRIPT_DIR/init/workflows.sh"
 REPOKIT_FORCE=$FORCE_PYPROJECT bash "$SCRIPT_DIR/languages/$LANGUAGE/setup.sh"
 bash "$SCRIPT_DIR/init/ruleset.sh"
 
-if git log "$BASE_BRANCH".."$BRANCH" --oneline 2>/dev/null | grep -q .; then
+if git log "origin/$BASE_BRANCH".."$BRANCH" --oneline 2>/dev/null | grep -q .; then
   echo "→ Pushing $BRANCH..."
   if $BRANCH_ON_REMOTE; then
     echo "  origin/$BRANCH already has a different version (rebuilt from $BASE_BRANCH each run) — force-pushing..."
