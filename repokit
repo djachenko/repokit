@@ -168,7 +168,12 @@ fi
 run_quiet git checkout -B "$BRANCH" "origin/$BASE_BRANCH"
 
 printf 'language=%s\nbase_branch=%s\n' "$LANGUAGE" "$BASE_BRANCH" > .repokit
-grep -qxF '.repokit' .gitignore 2>/dev/null || echo '.repokit' >> .gitignore
+if ! grep -qxF '.repokit' .gitignore 2>/dev/null; then
+  if [[ -s .gitignore && -n "$(tail -c1 .gitignore)" ]]; then
+    echo >> .gitignore
+  fi
+  echo '.repokit' >> .gitignore
+fi
 git add .gitignore
 if ! git diff --cached --quiet; then
   repokit_commit "add .repokit to .gitignore"
