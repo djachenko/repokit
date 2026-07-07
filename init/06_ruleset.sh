@@ -4,7 +4,16 @@ set -e
 
 echo "→ Applying ruleset..."
 
-# Prints "<job_id>\t<uses>" per job in a wrapper workflow file (uses empty for plain jobs).
+# ── YAML parsers ──────────────────────────────────────────────────────────────
+#
+# We need to know which GitHub Actions check contexts to require on PRs.
+# The check context name for a reusable-workflow job is "<wrapper-job> / <reusable-job>",
+# not just "<wrapper-job>" — so we parse the wrapper file to find which jobs call
+# reusable workflows, then parse the reusable file to find its terminal job.
+
+# parse_jobs <file>
+# Prints one "<job_id>\t<uses>" line per job in a wrapper workflow YAML.
+# For plain jobs (no `uses:`) the <uses> field is empty.
 parse_jobs() {
   local file="$1"
   awk '
@@ -23,7 +32,10 @@ parse_jobs() {
   ' "$file"
 }
 
-# Prints the id of the job nothing else in the file depends on (the terminal job of the chain).
+# resolve_terminal_job <file>
+# Prints the job id that no other job in the file depends on (the last in the chain).
+# GitHub reports the check context as "<caller> / <terminal>", so required_status_checks
+# must use the terminal job name, not an intermediate one.
 resolve_terminal_job() {
   local file="$1"
   awk '
@@ -35,10 +47,10 @@ resolve_terminal_job() {
     }
     in_jobs && /^    needs:/ {
       n=$0; sub(/^    needs: */, "", n)
-      gsub(/[\[\]]/, "", n)
+      gsub(/[\[\]]/, "", n)          # strip [ ] from needs: [a, b] form
       split(n, arr, ",")
       for (i in arr) {
-        gsub(/^ +| +$/, "", arr[i])
+        gsub(/^ +| +$/, "", arr[i]) # trim spaces around each name
         if (arr[i] != "") needed[arr[i]]=1
       }
     }
@@ -48,24 +60,31 @@ resolve_terminal_job() {
   ' "$file"
 }
 
-# Required checks must be satisfiable on a PR head commit, so only wrapper workflows
-# that actually run there (pull_request or push-on-any-branch) count — release.yml,
-# which only fires on push to master, never can.
+# ── Collect required check contexts ──────────────────────────────────────────
+#
+# Only workflows that run on pull_request (or on every push) can satisfy a
+# required status check on a PR commit.  release.yml only fires on push to
+# master, so it can never be a required check — we skip it here.
+
 required_checks=()
 
 for wf in tests.yml integration.yml; do
   file=".github/workflows/$wf"
   [[ -f "$file" ]] || continue
 
+  # IFS=$'\t' so read splits on the tab that parse_jobs inserts between fields.
   while IFS=$'\t' read -r job uses; do
     [[ -z "$job" ]] && continue
 
     if [[ -n "$uses" ]]; then
+      # Strip the @ref suffix from the uses value (e.g. "owner/repo/.../file.yml@v1")
+      # to get the bare filename, then look it up inside repokit's own workflows.
       reusable_name=$(basename "${uses%@*}")
       reusable_file="$SCRIPT_DIR/.github/workflows/$reusable_name"
 
       if [[ -f "$reusable_file" ]]; then
         terminal=$(resolve_terminal_job "$reusable_file" | head -1)
+        # GitHub check context for a reusable call: "<caller-job> / <reusable-job>"
         required_checks+=("$job / $terminal")
       else
         echo "  warn: reusable workflow $reusable_name not found in repokit, falling back to '$job' as check context"
@@ -81,11 +100,17 @@ if [[ ${#required_checks[@]} -eq 0 ]]; then
   echo "  warn: could not derive any required status checks from .github/workflows — leaving required_status_checks empty"
 fi
 
+# Build the JSON array fragment for required_status_checks.
 contexts_json=""
 for ctx in "${required_checks[@]}"; do
   contexts_json+="{ \"context\": \"$ctx\" },"
 done
-contexts_json="${contexts_json%,}"
+contexts_json="${contexts_json%,}" # strip trailing comma
+
+# ── Apply ruleset via GitHub API ──────────────────────────────────────────────
+#
+# The Rulesets API has no PATCH/update endpoint that's safe to use idempotently,
+# so we delete the existing one (if any) and recreate it from scratch.
 
 RULESET_NAME="$OWNER-github-flow-ruleset"
 RULESET_ID=$(gh api "repos/$OWNER/$REPO/rulesets" --jq ".[] | select(.name == \"$RULESET_NAME\") | .id" 2> /dev/null)
@@ -109,7 +134,11 @@ gh api "repos/$OWNER/$REPO/rulesets" \
     }
   },
   "bypass_actors": [
-    { "actor_id": 2991967, "actor_type": "Integration", "bypass_mode": "always" }
+    {
+      "actor_id": 2991967,
+      "actor_type": "Integration",
+      "bypass_mode": "always"
+    }
   ],
   "rules": [
     { "type": "deletion" },
