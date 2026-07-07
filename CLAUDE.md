@@ -2,8 +2,8 @@
 
 ## Status
 
-- **Последнее** — fix: replace shell rc block with sourced shell.sh (PR #47). Shell integration теперь в отдельном shell.sh, .zshrc не коррупируется.
-- **Следующее** — merge PR #47, проверить на реальной установке
+- **Последнее** — fix: replace shell rc block with sourced shell.sh (PR #47, merged, 0.9.9). .zshrc больше не коррупируется.
+- **Следующее** — merge PR #48 (readability refactor), проверить реальную установку после 0.9.9
 - **Блокеры** — —
 - **Состояние** — активная разработка
 
