@@ -3,10 +3,11 @@
 # Exit immediately if any command fails (equivalent to raising on first error).
 set -e
 
-# Absolute path to the directory containing this script, regardless of where it
-# was called from. ${BASH_SOURCE[0]} is the script's own path (unlike $0, which
-# can be the caller when the script is sourced). dirname strips the filename,
-# then cd + pwd resolves any relative or symlinked path to an absolute one.
+# Resolve the absolute path to the directory containing this script so that
+# all subscript calls work regardless of where repokit was called from.
+# ${BASH_SOURCE[0]} = path to this file (unlike $0, which can be the invoking
+# shell when the script is sourced). dirname strips the filename, then
+# "cd ... && pwd" resolves any relative path or symlink to an absolute one.
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 # ── Parse .repokit state before any flags so --language can override ──────────
@@ -14,32 +15,40 @@ SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 LANGUAGE=""
 FORCE_WORKFLOWS=false
 FORCE_PYPROJECT=false
-# ls outputs a newline-separated list of directory entries — used as the set of
-# valid language names.
-AVAILABLE_LANGUAGES=$(ls "$SCRIPT_DIR/languages/")
 
-# .repokit exists after the first run; its presence means this is an update.
+# Build the list of valid language names from the languages/ subdirectory.
+# ls prints one entry per line; we store it as a newline-separated string.
+AVAILABLE_LANGUAGES=$(ls "$SCRIPT_DIR/languages/")
+# Space-separated version for use in human-readable messages.
+# tr '\n' ' ' replaces every newline with a space.
+AVAILABLE_LANGUAGES_DISPLAY=$(echo "$AVAILABLE_LANGUAGES" | tr '\n' ' ')
+
+# .repokit is written at the end of every successful run, so its presence
+# means this is a re-run (update), not the first setup.
 IS_FIRST_SETUP=true
 if [[ -f .repokit ]]; then
-  # grep '^language=' finds the line starting with "language=",
-  # cut -d= -f2 splits on "=" and takes the second field (the value).
+  # Extract the value after "language=" on that line.
+  # grep '^language=' selects only the matching line; cut -d= -f2 splits on
+  # "=" and returns the second field (the value to the right of "=").
   LANGUAGE=$(grep '^language=' .repokit | cut -d= -f2)
   IS_FIRST_SETUP=false
 fi
 
 # ── CLI flags ─────────────────────────────────────────────────────────────────
 
-# $# = number of remaining positional arguments. Loop until all args consumed.
+# Consume arguments one by one until none remain.
+# $# = number of remaining positional arguments.
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --version|-v)
-      # 2>/dev/null suppresses "No such file" if VERSION is missing; || provides fallback.
+      # Read the version file; fall back to "unknown" if it doesn't exist.
+      # 2>/dev/null = discard error messages (stderr) so "No such file" never
+      # appears. || echo "unknown" = substitute if the command failed.
       VERSION=$(cat "$SCRIPT_DIR/VERSION" 2>/dev/null || echo "unknown")
       echo "repokit $VERSION"
       exit 0
       ;;
     --help|-h)
-      # tr '\n' ' ' converts newline-separated list to space-separated (for display).
       echo "Usage: repokit [--language <name>] [--force-workflows] [--force-pyproject]"
       echo ""
       echo "Initializes a GitHub repository in the current directory."
@@ -52,7 +61,7 @@ while [[ $# -gt 0 ]]; do
       echo ""
       echo "Options:"
       echo "  --language <name>    Language profile to use."
-      echo "                       Available: $(echo "$AVAILABLE_LANGUAGES" | tr '\n' ' ')"
+      echo "                       Available: $AVAILABLE_LANGUAGES_DISPLAY"
       echo "  --force-workflows    Overwrite workflows even if not repokit-managed;"
       echo "                       commits under repokit authorship."
       echo "  --force-pyproject    Overwrite pyproject.toml even if it already exists;"
@@ -68,11 +77,11 @@ while [[ $# -gt 0 ]]; do
       ;;
     --language)
       LANGUAGE="$2"
-      shift 2  # consume both the flag and its value from the argument list
+      shift 2  # drop both the flag name and its value from the argument list
       ;;
     --force-workflows)
       FORCE_WORKFLOWS=true
-      shift    # consume just the flag
+      shift    # drop just the flag
       ;;
     --force-pyproject)
       FORCE_PYPROJECT=true
@@ -85,48 +94,59 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# -z = "zero length" — true if the string is empty.
+# Fail fast if --language was not given and .repokit didn't have one.
+# [[ -z STRING ]] = true if STRING is empty (zero length).
 if [[ -z "$LANGUAGE" ]]; then
-  echo "Error: --language is required. Available: $(echo "$AVAILABLE_LANGUAGES" | tr '\n' ' ')"
+  echo "Error: --language is required. Available: $AVAILABLE_LANGUAGES_DISPLAY"
   exit 1
 fi
 
-# grep -qx: -q = quiet (no output), -x = exact whole-line match.
-# ! inverts the exit code — true if $LANGUAGE is NOT in the list.
+# Reject unknown language names before touching anything.
+# echo pipes the list into grep; grep -qx checks for an exact whole-line match
+# (-q = no output, just exit code; -x = the pattern must match the full line,
+# not a substring). ! inverts the result: true when $LANGUAGE is NOT in the list.
 if ! echo "$AVAILABLE_LANGUAGES" | grep -qx "$LANGUAGE"; then
-  echo "Error: unknown language '$LANGUAGE'. Available: $(echo "$AVAILABLE_LANGUAGES" | tr '\n' ' ')"
+  echo "Error: unknown language '$LANGUAGE'. Available: $AVAILABLE_LANGUAGES_DISPLAY"
   exit 1
 fi
 
 # ── Shared exports ────────────────────────────────────────────────────────────
 #
-# export makes variables visible to child processes (the init/*.sh subshells).
-# Without export, a variable only exists in the current shell.
+# Variables and functions must be exported to be visible in child processes.
+# Each init/*.sh runs in its own bash subshell; without export they would see
+# empty variables.
 
 export SCRIPT_DIR
 export LANGUAGE
 export REPO
-# basename = last component of a path: /home/user/my-repo → my-repo.
+# Repo name = last component of the current directory path.
+# basename strips everything up to and including the last "/".
 REPO=$(basename "$PWD")
 export REPOKIT_AUTHOR="repokit <repokit@djachenko>"
 
-# run_quiet <cmd...> → runs silently; prints output only on failure.
-# Lets the UI stay clean on success while still surfacing errors.
+# Run a command silently; print its output only if it fails.
+# Keeps the UI clean on success while still surfacing error details.
 run_quiet() {
   local out status
-  # "$@" expands to all arguments as separate words (preserving spaces in args).
-  # 2>&1 merges stderr into stdout so both are captured together.
+
+  # Run the command ($@ = all arguments as separate words, preserving spaces).
+  # Redirect stderr to stdout (2>&1 = "send fd 2 to wherever fd 1 goes") so
+  # both streams are captured together into $out.
   out=$("$@" 2>&1)
-  # $? = exit code of the last command (must be read immediately before anything else overwrites it).
+
+  # Capture exit code immediately — $? is overwritten by the next command.
   status=$?
+
   if [[ $status -ne 0 ]]; then
-    # >&2 sends output to stderr so it doesn't pollute stdout of callers.
+    # Send captured output to stderr (>&2 = "send stdout to fd 2") so it
+    # doesn't pollute the stdout of any caller that might capture our output.
     printf '%s\n' "$out" >&2
   fi
+
   return $status
 }
-# export -f makes the function available in child bash processes (subshells
-# spawned for the init scripts inherit it via environment).
+# export -f exports a function so child bash processes can call it.
+# The init scripts need run_quiet and repokit_commit; without this they'd be undefined.
 export -f run_quiet
 
 repokit_commit() {
@@ -134,15 +154,20 @@ repokit_commit() {
 }
 export -f repokit_commit
 
-# ask_yn "Question?" → returns 0 (yes) or 1 (no).
+# Prompt the user with a yes/no question; return 0 for yes, 1 for no.
 ask_yn() {
-  # -n suppresses the trailing newline so the cursor stays on the same line.
+  # Print the question without a trailing newline so the cursor stays inline.
+  # -n = no trailing newline.
   echo -n "$1 [y/N] "
-  # -r = don't interpret backslashes; -n 1 = read exactly one character without
-  # waiting for Enter.
+
+  # Read a single keypress without waiting for Enter.
+  # -r = don't treat backslash as escape; -n 1 = stop after one character.
   read -rn 1 answer
-  echo  # print a newline after the single character input
-  # =~ is regex match; ^[Yy]$ matches exactly one character: Y or y.
+
+  echo  # move the cursor to the next line after the keypress
+
+  # Test if the character is Y or y.
+  # =~ is regex match; ^[Yy]$ = start, one of Y/y, end (exactly one char).
   [[ "$answer" =~ ^[Yy]$ ]]
 }
 export -f ask_yn
@@ -152,21 +177,23 @@ export -f ask_yn
 bash "$SCRIPT_DIR/init/01_check_tools.sh"
 
 export OWNER
-# gh api user returns JSON like {"login": "djachenko", ...}.
-# --jq '.login' parses it and extracts just the login string.
+# Call the GitHub API to get the authenticated user's login name.
+# --jq '.login' parses the JSON response and extracts the "login" field.
 OWNER=$(gh api user --jq '.login')
 
 # ── Detect current repo state ─────────────────────────────────────────────────
 
+# Check whether the current directory is inside a git repository.
+# git rev-parse --git-dir prints the path to .git and exits 0 if found,
+# non-zero if not. &>/dev/null discards both stdout and stderr (we only
+# care about the exit code). && runs the assignment only on success.
 HAS_GIT=false
-# git rev-parse --git-dir prints the path to .git and exits 0 inside a repo,
-# exits non-zero outside one. &>/dev/null discards both stdout and stderr.
-# && runs the right side only if the left side succeeds (exit 0).
-git rev-parse --git-dir &> /dev/null && HAS_GIT=true
+git rev-parse --git-dir &>/dev/null && HAS_GIT=true
 
+# Check whether a GitHub repo with this name already exists under this owner.
+# gh repo view exits 0 if the repo exists, non-zero otherwise.
 HAS_REMOTE=false
-# gh repo view exits 0 if the repo exists on GitHub, non-zero otherwise.
-gh repo view "$OWNER/$REPO" &> /dev/null && HAS_REMOTE=true
+gh repo view "$OWNER/$REPO" &>/dev/null && HAS_REMOTE=true
 
 if [[ "$HAS_GIT" == false && "$HAS_REMOTE" == true ]]; then
   echo "Error: GitHub repo '$OWNER/$REPO' already exists but no local git. Clone it first."
@@ -176,19 +203,25 @@ fi
 # ── Git init (if needed) ──────────────────────────────────────────────────────
 
 if [[ "$HAS_GIT" == false ]]; then
-  # || exit 0: if ask_yn returns non-zero (user said N), exit cleanly.
+  # Exit cleanly if the user declines.
+  # ask_yn returns non-zero on "no"; || runs the right side on failure.
   ask_yn "Init git in $(pwd)?" || exit 0
   bash "$SCRIPT_DIR/init/02_git_init.sh"
 fi
 
-# Switch HTTPS remote to SSH if needed.
-# gh repo create sets up HTTPS; we want SSH so git operations don't prompt for credentials.
+# Switch the remote from HTTPS to SSH if needed.
+# gh repo create adds an HTTPS remote; SSH is preferred because it doesn't
+# prompt for credentials on every push/pull.
 if [[ "$HAS_GIT" == true ]]; then
-  # 2>/dev/null: suppress error if there's no remote named "origin".
-  # || true: if the command fails (no origin), don't abort — just leave remote_url empty.
+  # Get the URL of the "origin" remote, ignoring errors if there is none.
+  # 2>/dev/null = discard stderr only (stdout still flows normally).
+  # || true = if the command fails, produce an empty string instead of aborting
+  # (set -e would otherwise exit here because there's no "origin" remote).
   remote_url=$(git remote get-url origin 2>/dev/null || true)
+
   if [[ "$remote_url" == https://github.com/* ]]; then
-    # ${var#prefix} strips the given prefix from the variable value.
+    # Build the SSH equivalent by stripping the HTTPS prefix.
+    # ${var#prefix} removes the shortest matching prefix from the value.
     # "https://github.com/owner/repo.git" → "owner/repo.git"
     ssh_url="git@github.com:${remote_url#https://github.com/}"
     echo "→ Switching remote from HTTPS to SSH..."
@@ -202,10 +235,14 @@ if [[ "$HAS_REMOTE" == false ]]; then
   ask_yn "Create GitHub repo '$OWNER/$REPO'?" || exit 0
   bash "$SCRIPT_DIR/init/03_create_repo.sh"
 
-  # Check if repo already has commits (e.g. user ran git init + committed manually).
-  # --oneline gives one line per commit; grep -q . matches any non-empty output.
-  if git log --oneline 2> /dev/null | grep -q .; then
+  # If the repo already has commits (user committed manually before running
+  # repokit), push them. Otherwise create the initial commit.
+  # git log --oneline prints one line per commit; 2>/dev/null suppresses the
+  # "fatal: no commits" error on a brand-new repo. grep -q . = "any output exists"
+  # (. matches any character, -q = silent, just the exit code).
+  if git log --oneline 2>/dev/null | grep -q .; then
     echo "→ Pushing existing history..."
+    # -u = set upstream tracking so future git push/pull work without arguments.
     run_quiet git push -u origin master
   else
     bash "$SCRIPT_DIR/init/04_initial_commit.sh"
@@ -219,30 +256,37 @@ fi
 # it, so any manual fixes on the branch are preserved.
 
 BRANCH="chore/repokit-setup"
-# --abbrev-ref HEAD = human-readable branch name (e.g. "main") instead of SHA.
+# Get the current branch name as a human-readable string (e.g. "main"),
+# not a SHA. --abbrev-ref HEAD = "abbreviate the ref HEAD points to".
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
 if [[ "$CURRENT_BRANCH" == "$BRANCH" ]]; then
-  # Already on the setup branch (re-run after partial failure). Read base from .repokit.
+  # We're already on the setup branch — probably a re-run after a partial
+  # failure. Read the base branch that was saved to .repokit.
+  # 2>/dev/null = don't error if the file is missing.
   BASE_BRANCH=$(grep '^base_branch=' .repokit 2>/dev/null | cut -d= -f2)
-  # ${var:-default}: if BASE_BRANCH is empty or unset, use "master".
+  # ${var:-default} = use "master" if BASE_BRANCH is empty or unset.
   BASE_BRANCH=${BASE_BRANCH:-master}
 else
-  # Normal case: current branch is the base we'll branch off from.
+  # Normal case: whatever branch we're on becomes the base.
   BASE_BRANCH="$CURRENT_BRANCH"
 fi
 
 run_quiet git fetch origin "$BASE_BRANCH"
+
+# Check whether the setup branch already exists on the remote.
+# git ls-remote lists refs on origin; --exit-code makes it exit non-zero
+# if the ref isn't found; --heads restricts to branches (refs/heads/*).
+# &>/dev/null = discard all output, check exit code only.
 BRANCH_ON_REMOTE=false
-# ls-remote --exit-code exits 2 (non-zero) if the ref doesn't exist on origin.
-# --heads limits the search to branches only (refs/heads/*).
-if git ls-remote --exit-code --heads origin "$BRANCH" &> /dev/null; then
+if git ls-remote --exit-code --heads origin "$BRANCH" &>/dev/null; then
   BRANCH_ON_REMOTE=true
   run_quiet git fetch origin "$BRANCH"
 fi
 
+# Check whether the setup branch exists locally.
+# git rev-parse --verify resolves a name to a SHA; exits non-zero if not found.
 LOCAL_BRANCH_EXISTS=false
-# rev-parse --verify checks if the name resolves to a valid git object.
 git rev-parse --verify "$BRANCH" &>/dev/null && LOCAL_BRANCH_EXISTS=true
 
 if $LOCAL_BRANCH_EXISTS || $BRANCH_ON_REMOTE; then
@@ -250,11 +294,13 @@ if $LOCAL_BRANCH_EXISTS || $BRANCH_ON_REMOTE; then
   if $LOCAL_BRANCH_EXISTS; then
     run_quiet git checkout "$BRANCH"
   else
-    # -B: create the branch if it doesn't exist locally, or reset it if it does.
+    # Recreate the local branch tracking the remote version.
+    # -B = create the branch if missing, or reset it to the given start point.
     run_quiet git checkout -B "$BRANCH" "origin/$BRANCH"
   fi
   if ! run_quiet git rebase "origin/$BASE_BRANCH"; then
-    # Clean up the failed rebase state before exiting.
+    # Clean up the half-finished rebase before we exit.
+    # 2>/dev/null || true = ignore errors if there's nothing to abort.
     git rebase --abort 2>/dev/null || true
     echo "Error: could not rebase $BRANCH onto origin/$BASE_BRANCH — resolve manually."
     exit 1
@@ -266,47 +312,58 @@ fi
 
 # ── Write .repokit marker + update .gitignore ────────────────────────────────
 
-# printf with format string: %s = string, \n = newline.
-# > overwrites the file (vs >> which appends).
+# Write current run's settings to .repokit so re-runs and subshells can read them.
+# printf 'format' args = like Python's format string; %s = string, \n = newline.
+# > = overwrite the file (>> would append).
 printf 'language=%s\nbase_branch=%s\n' "$LANGUAGE" "$BASE_BRANCH" > .repokit
 
-# grep -qxF: -F = fixed string (dot is literal, not regex), -x = whole-line match.
-# 2>/dev/null: suppress error if .gitignore doesn't exist yet.
+# Add .repokit to .gitignore if it isn't already listed there.
+# grep -qxF: -q = silent (exit code only); -x = whole-line match (not substring);
+# -F = literal string, not regex (so "." is a dot, not "any character").
+# 2>/dev/null = don't error if .gitignore doesn't exist yet.
 if ! grep -qxF '.repokit' .gitignore 2>/dev/null; then
-  # -s = file exists and is non-empty.
-  # tail -c1 = last byte of the file; -n = string is non-empty.
-  # Together: file has content AND doesn't end with a newline — add one before appending.
+  # Ensure the file ends with a newline before appending, so our new line
+  # doesn't get merged onto the last existing line.
+  # -s = file exists and has size > 0.
+  # tail -c1 = read the last byte of the file.
+  # -n STRING = true if the string is non-empty (i.e. the last byte is not \n).
   if [[ -s .gitignore && -n "$(tail -c1 .gitignore)" ]]; then
-    echo >> .gitignore  # echo with no argument prints just a newline
+    echo >> .gitignore  # echo with no argument outputs just a newline
   fi
   echo '.repokit' >> .gitignore
 fi
 git add .gitignore
-# --cached = look at staged changes only (index vs HEAD, not working tree).
-# --quiet = no output; exit code 0 = nothing staged, 1 = something staged.
+# Commit only if something was actually staged (avoids empty commits).
+# git diff --cached compares the index (staged) to HEAD.
+# --quiet = no output; exits 0 if there's no diff, 1 if there are staged changes.
+# ! inverts: the body runs only when there are staged changes.
 if ! git diff --cached --quiet; then
   repokit_commit "add .repokit to .gitignore"
 fi
 
-# ── Run language setup + shared steps ────────────────────────────────────────
+# ── Run setup steps in order ──────────────────────────────────────────────────
 #
-# Putting VAR=value before a command sets it as an environment variable for that
-# command only — it doesn't persist in the current shell after the command exits.
+# Prepending VAR=value to a command sets that variable only in the environment
+# of that single command — the current shell's value is unchanged afterwards.
 
 REPOKIT_FORCE=$FORCE_WORKFLOWS bash "$SCRIPT_DIR/init/05_workflows.sh"
-REPOKIT_FORCE=$FORCE_PYPROJECT bash "$SCRIPT_DIR/languages/$LANGUAGE/language_setup.sh"
-bash "$SCRIPT_DIR/init/06_ruleset.sh"
+REPOKIT_FORCE=$FORCE_PYPROJECT bash "$SCRIPT_DIR/languages/$LANGUAGE/06_language_setup.sh"
+bash "$SCRIPT_DIR/init/07_ruleset.sh"
 
 # ── Push setup branch + open PR ──────────────────────────────────────────────
 
-# "A..B" lists commits reachable from B but not from A — i.e. new commits on BRANCH
-# since it diverged from origin/BASE_BRANCH. If empty, nothing to push.
+# Check whether there are any new commits to push.
+# "A..B" = commits reachable from B but not from A (i.e. commits added on
+# BRANCH since it diverged from origin/BASE_BRANCH). --oneline = one line per
+# commit. grep -q . = "any line exists" (. = any character, -q = silent).
 if git log "origin/$BASE_BRANCH..$BRANCH" --oneline 2>/dev/null | grep -q .; then
   echo "→ Pushing $BRANCH..."
   if $BRANCH_ON_REMOTE; then
     echo "  force-pushing (rebased onto origin/$BASE_BRANCH)..."
-    # --force-with-lease: force push only if the remote branch hasn't changed since
-    # our last fetch. Safer than --force; fails if someone else pushed in the meantime.
+    # Force push, but only if the remote hasn't changed since our last fetch.
+    # --force-with-lease checks that the remote's current SHA matches what we
+    # fetched; it refuses if someone else pushed in the meantime. Safer than
+    # --force which overwrites blindly.
     if ! run_quiet git push --force-with-lease -u origin "$BRANCH"; then
       echo "Error: could not push $BRANCH — origin has changes repokit didn't expect (pushed manually, or changed since the last fetch)."
       echo "Resolve manually, e.g.: git push --force origin $BRANCH"
@@ -316,14 +373,17 @@ if git log "origin/$BASE_BRANCH..$BRANCH" --oneline 2>/dev/null | grep -q .; the
     echo "Error: could not push $BRANCH."
     exit 1
   fi
-  # 2>/dev/null || true: suppress error if a PR already exists for this branch.
+
+  # Open a PR; ignore the error if one already exists for this branch.
+  # 2>/dev/null = discard the "already exists" error message.
+  # || true = prevent set -e from aborting on the non-zero exit code.
   gh pr create \
     --title "chore: [repokit] setup" \
     --body "Automated repository setup by repokit." \
     --base "$BASE_BRANCH" 2>/dev/null || true
 
-  # Instructions describe one-time manual setup (secrets, trusted publishers).
-  # Only show on first run; updates don't require repeating them.
+  # Show the post-install checklist only on the very first run. After that the
+  # user has already done the one-time steps (secrets, trusted publishers).
   if [[ "$IS_FIRST_SETUP" == true ]]; then
     bash "$SCRIPT_DIR/languages/$LANGUAGE/instructions.sh"
   fi
@@ -335,9 +395,10 @@ else
   echo "✓ Already up to date"
 fi
 
-# base_branch was written to .repokit at the start of this run so that
-# 06_ruleset.sh and subshells can read it. Remove it afterwards — it's
-# derived from the current branch and shouldn't persist across runs.
-# sed -i '': edit file in-place (-i) with no backup suffix (BSD/macOS sed requires '').
-# /^base_branch=/d: delete lines that start with "base_branch=".
+# Remove base_branch from .repokit after the run — it was only needed to pass
+# the value to subshells. It's re-derived from the current branch on the next
+# run, so leaving it would create stale state.
+# sed -i '' = edit in place with no backup file (BSD/macOS sed requires the
+# empty string argument after -i; GNU sed on Linux accepts just -i).
+# /^base_branch=/d = delete every line that starts with "base_branch=".
 sed -i '' '/^base_branch=/d' .repokit
