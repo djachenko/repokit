@@ -69,6 +69,7 @@ resolve_terminal_job() {
 required_checks=()
 
 for wf in tests.yml integration.yml; do
+
   file=".github/workflows/$wf"
   [[ -f "$file" ]] || continue
 
@@ -94,6 +95,7 @@ for wf in tests.yml integration.yml; do
       required_checks+=("$job")
     fi
   done < <(parse_jobs "$file")
+
 done
 
 if [[ ${#required_checks[@]} -eq 0 ]]; then
@@ -105,6 +107,7 @@ contexts_json=""
 for ctx in "${required_checks[@]}"; do
   contexts_json+="{ \"context\": \"$ctx\" },"
 done
+
 contexts_json="${contexts_json%,}" # strip trailing comma
 
 # ── Apply ruleset via GitHub API ──────────────────────────────────────────────

@@ -13,6 +13,7 @@ written=()
 
 # Full version tag (e.g. "0.9.8") or "master" when running from source.
 REPOKIT_VERSION=$(cat "$SCRIPT_DIR/VERSION" 2> /dev/null || echo "master")
+
 # Reusable workflows are pinned to major.minor (e.g. "0.9") so patch bumps
 # don't require regenerating client workflows. Falls back to "master".
 if [[ "$REPOKIT_VERSION" == "master" ]]; then
