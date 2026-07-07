@@ -108,7 +108,7 @@ ask_yn() {
 }
 export -f ask_yn
 
-bash "$SCRIPT_DIR/init/preflight.sh"
+bash "$SCRIPT_DIR/init/01_check_tools.sh"
 
 export OWNER
 OWNER=$(gh api user --jq '.login')
@@ -126,7 +126,7 @@ fi
 
 if [[ "$HAS_GIT" == false ]]; then
   ask_yn "Init git in $(pwd)?" || exit 0
-  bash "$SCRIPT_DIR/init/git_init.sh"
+  bash "$SCRIPT_DIR/init/02_git_init.sh"
 fi
 
 if [[ "$HAS_GIT" == true ]]; then
@@ -140,13 +140,13 @@ fi
 
 if [[ "$HAS_REMOTE" == false ]]; then
   ask_yn "Create GitHub repo '$OWNER/$REPO'?" || exit 0
-  bash "$SCRIPT_DIR/init/remote.sh"
+  bash "$SCRIPT_DIR/init/03_create_repo.sh"
 
   if git log --oneline 2> /dev/null | grep -q .; then
     echo "→ Pushing existing history..."
     run_quiet git push -u origin master
   else
-    bash "$SCRIPT_DIR/init/commit.sh"
+    bash "$SCRIPT_DIR/init/04_initial_commit.sh"
   fi
 fi
 
@@ -199,9 +199,9 @@ if ! git diff --cached --quiet; then
   repokit_commit "add .repokit to .gitignore"
 fi
 
-REPOKIT_FORCE=$FORCE_WORKFLOWS bash "$SCRIPT_DIR/init/workflows.sh"
-REPOKIT_FORCE=$FORCE_PYPROJECT bash "$SCRIPT_DIR/languages/$LANGUAGE/setup.sh"
-bash "$SCRIPT_DIR/init/ruleset.sh"
+REPOKIT_FORCE=$FORCE_WORKFLOWS bash "$SCRIPT_DIR/init/05_workflows.sh"
+REPOKIT_FORCE=$FORCE_PYPROJECT bash "$SCRIPT_DIR/languages/$LANGUAGE/${LANGUAGE}_setup.sh"
+bash "$SCRIPT_DIR/init/06_ruleset.sh"
 
 if git log "origin/$BASE_BRANCH..$BRANCH" --oneline 2>/dev/null | grep -q .; then
   echo "→ Pushing $BRANCH..."
