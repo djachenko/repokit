@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.9.9 - 2026-07-07
+#### Bug Fixes
+- replace shell rc block with sourced shell.sh - (3fd267e) - Igor Djachenko
+
+- - -
+
 ## 0.9.8 - 2026-07-03
 #### Bug Fixes
 - rebase setup branch instead of recreating it - (57f079e) - Igor Djachenko
