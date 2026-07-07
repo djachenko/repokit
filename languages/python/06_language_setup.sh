@@ -23,6 +23,7 @@ if [[ -f "$SKILL_DST" ]] && cmp -s "$SKILL_SRC" "$SKILL_DST"; then
   echo "→ $SKILL_DST is up to date, skipping"
 elif [[ -f "$SKILL_DST" ]]; then
   cp "$SKILL_SRC" "$SKILL_DST"
+
   # If the path is gitignored the file still gets updated on disk but we don't
   # stage it — committing a gitignored path would silently succeed but confuse
   # anyone who clones the repo later and finds the file missing.
@@ -35,6 +36,7 @@ elif [[ -f "$SKILL_DST" ]]; then
 elif ask_yn "Create Claude skill for repokit integration?"; then
   mkdir -p .claude/skills
   cp "$SKILL_SRC" "$SKILL_DST"
+
   if git check-ignore -q "$SKILL_DST" 2> /dev/null; then
     echo "→ Created $SKILL_DST (not committed: path is gitignored)"
   else

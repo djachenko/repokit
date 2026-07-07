@@ -28,14 +28,18 @@ echo "Downloading repokit..."
 curl -fsSL "$TARBALL_URL" | tar xz -C "$TMP"
 
 echo "Installing to $INSTALL_DIR..."
+
 # Replace the whole install dir atomically — no partial state if something fails mid-copy.
 rm -rf "$INSTALL_DIR"
 mv "$TMP"/repokit-"$VERSION" "$INSTALL_DIR"
+
 # install.sh is a bootstrap — it has no purpose inside the installed tree.
 rm -f "$INSTALL_DIR/install.sh"
 # memory/ is a dev artifact; installed copies should not carry session state.
 rm -rf "$INSTALL_DIR/memory"
+
 echo "$VERSION" > "$INSTALL_DIR/VERSION"
+
 # Make the orchestrator and all init scripts executable.
 # Language setup scripts are called with `bash <script>` so they don't need +x.
 chmod +x "$INSTALL_DIR/repokit" "$INSTALL_DIR"/init/*.sh "$INSTALL_DIR"/hooks/*
@@ -82,6 +86,7 @@ p.write_text(''.join(lines))
   echo "repokit uninstalled. Restart your shell."
 }
 SHELLEOF
+
 sed -i '' "s|__INSTALL_DIR__|$INSTALL_DIR|g; s|__SHELL_RC__|$SHELL_RC|g" "$INSTALL_DIR/shell.sh"
 
 # Add source line to rc once — idempotent on updates since the line is identical.
