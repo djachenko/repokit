@@ -27,10 +27,10 @@ repokit/
 │   ├── 03_create_repo.sh          # gh repo create + remote
 │   ├── 04_initial_commit.sh       # первый коммит + push
 │   ├── 05_workflows.sh            # копирует wrapper workflows с подстановкой
-│   └── 06_ruleset.sh              # gh api ruleset (required checks, merge-only)
+│   └── 07_ruleset.sh              # gh api ruleset (required checks, merge-only)
 └── languages/
     └── python/
-        ├── python_setup.sh        # pyproject.toml + Claude skill
+        ├── 06_language_setup.sh   # pyproject.toml + Claude skill
         ├── instructions.sh        # постустановочный чеклист (только первый запуск)
         ├── pyproject.toml         # шаблон, плейсхолдеры {{REPO}} {{OWNER}}
         ├── repokit_skill.md       # Claude skill, копируется в .claude/skills/repokit.md
