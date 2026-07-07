@@ -8,18 +8,21 @@ mkdir -p .github/workflows
 
 written=()
 
-REPOKIT_FULL=$(cat "$SCRIPT_DIR/VERSION" 2> /dev/null || echo "master")
-if [[ "$REPOKIT_FULL" == "master" ]]; then
-  REPOKIT_REF="master"
+# Full version tag (e.g. "0.9.8") or "master" when running from source.
+REPOKIT_VERSION=$(cat "$SCRIPT_DIR/VERSION" 2> /dev/null || echo "master")
+# Reusable workflows are pinned to major.minor (e.g. "0.9") so patch bumps
+# don't require regenerating client workflows. Falls back to "master".
+if [[ "$REPOKIT_VERSION" == "master" ]]; then
+  REPOKIT_VERSION_REF="master"
 else
-  REPOKIT_REF=$(echo "$REPOKIT_FULL" | cut -d. -f1,2)
+  REPOKIT_VERSION_REF=$(echo "$REPOKIT_VERSION" | cut -d. -f1,2)
 fi
 
 for template in "$SCRIPT_DIR/languages/$LANGUAGE/wrappers/"*.yml; do
   name=$(basename "$template")
   dest=".github/workflows/$name"
 
-  new_content=$(sed "s/{{REPO}}/$REPO/g;s/{{VERSION}}/$REPOKIT_REF/g" "$template")
+  new_content=$(sed "s/{{REPO}}/$REPO/g;s/{{VERSION}}/$REPOKIT_VERSION_REF/g" "$template")
 
   if [[ -f "$dest" && "${REPOKIT_FORCE:-false}" == false ]]; then
     if [[ "$new_content" == "$(cat "$dest")" ]]; then

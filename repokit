@@ -4,14 +4,20 @@ set -e
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
+# ── Parse .repokit state before any flags so --language can override ──────────
+
 LANGUAGE=""
 FORCE_WORKFLOWS=false
 FORCE_PYPROJECT=false
 AVAILABLE_LANGUAGES=$(ls "$SCRIPT_DIR/languages/")
 
+IS_FIRST_SETUP=true
 if [[ -f .repokit ]]; then
   LANGUAGE=$(grep '^language=' .repokit | cut -d= -f2)
+  IS_FIRST_SETUP=false
 fi
+
+# ── CLI flags ─────────────────────────────────────────────────────────────────
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -76,13 +82,15 @@ if ! echo "$AVAILABLE_LANGUAGES" | grep -qx "$LANGUAGE"; then
   exit 1
 fi
 
+# ── Shared exports ────────────────────────────────────────────────────────────
+
 export SCRIPT_DIR
 export LANGUAGE
 export REPO
 REPO=$(basename "$PWD")
 export REPOKIT_AUTHOR="repokit <repokit@djachenko>"
 
-# run_quiet <cmd...> → runs a command silently, printing its output only if it fails
+# run_quiet <cmd...> → runs silently; prints output only on failure
 run_quiet() {
   local out status
   out=$("$@" 2>&1)
@@ -108,10 +116,14 @@ ask_yn() {
 }
 export -f ask_yn
 
+# ── Preflight: verify git, gh, auth ──────────────────────────────────────────
+
 bash "$SCRIPT_DIR/init/01_check_tools.sh"
 
 export OWNER
 OWNER=$(gh api user --jq '.login')
+
+# ── Detect current repo state ─────────────────────────────────────────────────
 
 HAS_GIT=false
 git rev-parse --git-dir &> /dev/null && HAS_GIT=true
@@ -124,11 +136,14 @@ if [[ "$HAS_GIT" == false && "$HAS_REMOTE" == true ]]; then
   exit 1
 fi
 
+# ── Git init (if needed) ──────────────────────────────────────────────────────
+
 if [[ "$HAS_GIT" == false ]]; then
   ask_yn "Init git in $(pwd)?" || exit 0
   bash "$SCRIPT_DIR/init/02_git_init.sh"
 fi
 
+# Switch HTTPS remote to SSH if needed
 if [[ "$HAS_GIT" == true ]]; then
   remote_url=$(git remote get-url origin 2>/dev/null || true)
   if [[ "$remote_url" == https://github.com/* ]]; then
@@ -137,6 +152,8 @@ if [[ "$HAS_GIT" == true ]]; then
     run_quiet git remote set-url origin "$ssh_url"
   fi
 fi
+
+# ── Create GitHub repo + initial push (if needed) ────────────────────────────
 
 if [[ "$HAS_REMOTE" == false ]]; then
   ask_yn "Create GitHub repo '$OWNER/$REPO'?" || exit 0
@@ -149,6 +166,12 @@ if [[ "$HAS_REMOTE" == false ]]; then
     bash "$SCRIPT_DIR/init/04_initial_commit.sh"
   fi
 fi
+
+# ── Setup branch: create or rebase onto latest base ──────────────────────────
+#
+# All repokit changes land on chore/repokit-setup and go through a PR.
+# On re-runs we rebase the branch onto the current base instead of recreating
+# it, so any manual fixes on the branch are preserved.
 
 BRANCH="chore/repokit-setup"
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
@@ -187,6 +210,8 @@ else
   run_quiet git checkout -B "$BRANCH" "origin/$BASE_BRANCH"
 fi
 
+# ── Write .repokit marker + update .gitignore ────────────────────────────────
+
 printf 'language=%s\nbase_branch=%s\n' "$LANGUAGE" "$BASE_BRANCH" > .repokit
 if ! grep -qxF '.repokit' .gitignore 2>/dev/null; then
   if [[ -s .gitignore && -n "$(tail -c1 .gitignore)" ]]; then
@@ -199,9 +224,13 @@ if ! git diff --cached --quiet; then
   repokit_commit "add .repokit to .gitignore"
 fi
 
+# ── Run language setup + shared steps ────────────────────────────────────────
+
 REPOKIT_FORCE=$FORCE_WORKFLOWS bash "$SCRIPT_DIR/init/05_workflows.sh"
 REPOKIT_FORCE=$FORCE_PYPROJECT bash "$SCRIPT_DIR/languages/$LANGUAGE/${LANGUAGE}_setup.sh"
 bash "$SCRIPT_DIR/init/06_ruleset.sh"
+
+# ── Push setup branch + open PR ──────────────────────────────────────────────
 
 if git log "origin/$BASE_BRANCH..$BRANCH" --oneline 2>/dev/null | grep -q .; then
   echo "→ Pushing $BRANCH..."
@@ -221,7 +250,11 @@ if git log "origin/$BASE_BRANCH..$BRANCH" --oneline 2>/dev/null | grep -q .; the
     --body "Automated repository setup by repokit." \
     --base "$BASE_BRANCH" 2>/dev/null || true
 
-  bash "$SCRIPT_DIR/languages/$LANGUAGE/instructions.sh"
+  # Instructions describe one-time manual setup (secrets, trusted publishers).
+  # Only show on first run; updates don't require repeating them.
+  if [[ "$IS_FIRST_SETUP" == true ]]; then
+    bash "$SCRIPT_DIR/languages/$LANGUAGE/instructions.sh"
+  fi
 
   echo ""
   echo "✓ Done: https://github.com/$OWNER/$REPO"
