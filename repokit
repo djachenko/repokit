@@ -227,7 +227,7 @@ fi
 # ── Run language setup + shared steps ────────────────────────────────────────
 
 REPOKIT_FORCE=$FORCE_WORKFLOWS bash "$SCRIPT_DIR/init/05_workflows.sh"
-REPOKIT_FORCE=$FORCE_PYPROJECT bash "$SCRIPT_DIR/languages/$LANGUAGE/${LANGUAGE}_setup.sh"
+REPOKIT_FORCE=$FORCE_PYPROJECT bash "$SCRIPT_DIR/languages/$LANGUAGE/language_setup.sh"
 bash "$SCRIPT_DIR/init/06_ruleset.sh"
 
 # ── Push setup branch + open PR ──────────────────────────────────────────────
