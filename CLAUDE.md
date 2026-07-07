@@ -1,5 +1,12 @@
 # repokit — Project Guide
 
+## Status
+
+- **Последнее** — fix: replace shell rc block with sourced shell.sh (PR #47). Shell integration теперь в отдельном shell.sh, .zshrc не коррупируется.
+- **Следующее** — merge PR #47, проверить на реальной установке
+- **Блокеры** — —
+- **Состояние** — активная разработка
+
 ## Цель
 
 Bash-скрипт для бутстрапа новых GitHub-репозиториев. Создаёт репо, инициализирует git, пишет CI workflow-файлы, `pyproject.toml`, применяет ruleset.
