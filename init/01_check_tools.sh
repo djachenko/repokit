@@ -2,7 +2,7 @@
 
 set -e
 
-echo "→ Checking requirements..."
+echo "→ Checking tools: git, gh..."
 
 if ! command -v git &> /dev/null; then
   echo "✗ git not found. Install: https://git-scm.com"
