@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+find "$SCRIPT_DIR" -type f \
+  ! -path '*/.git/*' \
+  ! -path '*/_claude/*' \
+  ! -name 'adopt' ! -name 'install' \
+  ! -name 'uninstall' ! -name 'restart' \
+  ! -name 'watch' ! -name 'commit' \
+  ! -name '*.md' \
+  | while read -r src; do
+    rel="${src#$SCRIPT_DIR/}"
+    dest="$HOME/$rel"
+    if [[ -e "$dest" && ! -L "$dest" ]]; then
+      echo "SKIP (exists): ~/$rel" >&2
+    else
+      mkdir -p "$(dirname "$dest")"
+      ln -sf "$src" "$dest"
+      echo "linked: ~/$rel"
+    fi
+  done
+
+LABEL="com.$(whoami).$(basename "$SCRIPT_DIR")-watch"
+PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
+cat > "$PLIST" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>$LABEL</string>
+  <key>ProgramArguments</key><array>
+    <string>$SCRIPT_DIR/watch</string>
+  </array>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+</dict></plist>
+EOF
+launchctl load "$PLIST"
+echo "installed: $LABEL"

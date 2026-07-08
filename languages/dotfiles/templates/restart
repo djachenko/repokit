@@ -1,0 +1,3 @@
+#!/bin/bash
+LABEL="com.$(whoami).$(basename "$(cd "$(dirname "$0")" && pwd)")-watch"
+launchctl kickstart -k "gui/$(id -u)/$LABEL"
