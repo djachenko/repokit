@@ -2,6 +2,22 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.10.0 - 2026-07-08
+#### Features
+- add dotfiles language - (c98f3d8) - Igor Djachenko
+#### Bug Fixes
+- suppress shellcheck warnings for dynamic source and cross-shell variables - (cd802f9) - Igor Djachenko
+#### Documentation
+- update CLAUDE.md for dotfiles language and run_step mechanism - (36d0db9) - Igor Djachenko
+#### Refactoring
+- extract branch flow into init/05_branch_prepare.sh and init/08_branch_push.sh - (675ac2d) - Igor Djachenko
+- add run_step language override mechanism - (47c5721) - Igor Djachenko
+- renumber 05_workflows to 06 to make room for branch flow steps - (b2c0e8f) - Igor Djachenko
+#### Miscellaneous Chores
+- add _worktrees/ to .gitignore - (348703c) - Igor Djachenko
+
+- - -
+
 ## 0.9.11 - 2026-07-08
 #### Bug Fixes
 - resolve version via --points-at HEAD in bash-release - (f226251) - Igor Djachenko
