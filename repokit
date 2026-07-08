@@ -172,9 +172,19 @@ ask_yn() {
 }
 export -f ask_yn
 
+run_step() {
+  local step="$1"
+  local override="$SCRIPT_DIR/languages/$LANGUAGE/$step"
+  if [[ -f "$override" ]]; then
+    source "$override"
+  else
+    source "$SCRIPT_DIR/init/$step"
+  fi
+}
+
 # ── Preflight: verify git, gh, auth ──────────────────────────────────────────
 
-bash "$SCRIPT_DIR/init/01_check_tools.sh"
+run_step 01_check_tools.sh
 
 export OWNER
 # Call the GitHub API to get the authenticated user's login name.
@@ -206,7 +216,7 @@ if [[ "$HAS_GIT" == false ]]; then
   # Exit cleanly if the user declines.
   # ask_yn returns non-zero on "no"; || runs the right side on failure.
   ask_yn "Init git in $(pwd)?" || exit 0
-  bash "$SCRIPT_DIR/init/02_git_init.sh"
+  run_step 02_git_init.sh
 fi
 
 # Switch the remote from HTTPS to SSH if needed.
@@ -233,7 +243,7 @@ fi
 
 if [[ "$HAS_REMOTE" == false ]]; then
   ask_yn "Create GitHub repo '$OWNER/$REPO'?" || exit 0
-  bash "$SCRIPT_DIR/init/03_create_repo.sh"
+  run_step 03_create_repo.sh
 
   # If the repo already has commits (user committed manually before running
   # repokit), push them. Otherwise create the initial commit.
@@ -245,7 +255,7 @@ if [[ "$HAS_REMOTE" == false ]]; then
     # -u = set upstream tracking so future git push/pull work without arguments.
     run_quiet git push -u origin master
   else
-    bash "$SCRIPT_DIR/init/04_initial_commit.sh"
+    run_step 04_initial_commit.sh
   fi
 fi
 
@@ -346,9 +356,9 @@ fi
 # Prepending VAR=value to a command sets that variable only in the environment
 # of that single command — the current shell's value is unchanged afterwards.
 
-REPOKIT_FORCE=$FORCE_WORKFLOWS bash "$SCRIPT_DIR/init/06_workflows.sh"
+REPOKIT_FORCE=$FORCE_WORKFLOWS run_step 06_workflows.sh
 REPOKIT_FORCE=$FORCE_PYPROJECT bash "$SCRIPT_DIR/languages/$LANGUAGE/06_language_setup.sh"
-bash "$SCRIPT_DIR/init/07_ruleset.sh"
+run_step 07_ruleset.sh
 
 # ── Push setup branch + open PR ──────────────────────────────────────────────
 
