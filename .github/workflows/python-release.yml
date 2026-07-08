@@ -46,12 +46,12 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          BEFORE=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          TAG_BEFORE=$(git tag --sort=-version:refname | head -1)
           semantic-release version
-          AFTER=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-          if [ "$BEFORE" != "$AFTER" ]; then
+          TAG_AFTER=$(git tag --sort=-version:refname | head -1)
+          if [ "$TAG_BEFORE" != "$TAG_AFTER" ]; then
             echo "released=true" >> $GITHUB_OUTPUT
-            echo "version=${AFTER#v}" >> $GITHUB_OUTPUT
+            echo "version=${TAG_AFTER#v}" >> $GITHUB_OUTPUT
           else
             echo "released=false" >> $GITHUB_OUTPUT
           fi
