@@ -2,6 +2,18 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.9.11 - 2026-07-08
+#### Bug Fixes
+- resolve version via --points-at HEAD in bash-release - (f226251) - Igor Djachenko
+#### Miscellaneous Chores
+- release 0 [no ci] - (1e45f36) - repokit
+- add _worktrees/ to gitignore - (91ba5dd) - Igor Djachenko
+- pin release deps, update min versions to latest - (29416fe) - Igor Djachenko
+- add CLAUDE.local.md to gitignore - (10f8688) - Igor Djachenko
+- sync pyproject.toml template with best practices - (5b90786) - Igor Djachenko
+
+- - -
+
 ## 0.9.10 - 2026-07-08
 #### Bug Fixes
 - detect release via git tag sort instead of git describe - (7de3655) - Igor Djachenko
