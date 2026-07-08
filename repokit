@@ -26,6 +26,7 @@ AVAILABLE_LANGUAGES_DISPLAY=$(echo "$AVAILABLE_LANGUAGES" | tr '\n' ' ')
 # .repokit is written at the end of every successful run, so its presence
 # means this is a re-run (update), not the first setup.
 IS_FIRST_SETUP=true
+export IS_FIRST_SETUP
 if [[ -f .repokit ]]; then
   # Extract the value after "language=" on that line.
   # grep '^language=' selects only the matching line; cut -d= -f2 splits on
@@ -176,8 +177,10 @@ run_step() {
   local step="$1"
   local override="$SCRIPT_DIR/languages/$LANGUAGE/$step"
   if [[ -f "$override" ]]; then
+    # shellcheck source=/dev/null
     source "$override"
   else
+    # shellcheck source=/dev/null
     source "$SCRIPT_DIR/init/$step"
   fi
 }
