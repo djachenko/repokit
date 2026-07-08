@@ -12,17 +12,35 @@ authors = [{ name = "Igor Djachenko" }]
 requires-python = ">=3.10"
 
 [project.optional-dependencies]
-test = ["pytest", "ruff", "mypy"]
-release = ["build", "python-semantic-release"]
+test = [
+    "pytest >= 9.1",
+    "ruff >= 0.15",
+    "mypy >= 2.2",
+]
+release = [
+    "build >= 1.5",
+    "python-semantic-release >= 10.6",
+]
 
 [project.urls]
 Homepage = "https://github.com/{{OWNER}}/{{REPO}}"
-Repository = "https://github.com/{{OWNER}}/{{REPO}}"
+Source = "https://github.com/{{OWNER}}/{{REPO}}"
+Documentation = "https://github.com/{{OWNER}}/{{REPO}}#readme"
 Issues = "https://github.com/{{OWNER}}/{{REPO}}/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/{{REPO}}"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.mypy]
+strict = true
 
 [tool.semantic_release]
 version_toml = ["pyproject.toml:project.version"]
+tag_format = "v{version}"
 branch = "master"
-commit_message = "chore(release): v{version} [no ci]"
+commit_message = "chore(release): v{version} [skip ci]"
 major_on_zero = false
 allow_zero_version = true
