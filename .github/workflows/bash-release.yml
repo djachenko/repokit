@@ -29,31 +29,36 @@ jobs:
           command: bump
           args: --auto --disable-bump-commit
 
-      - name: Update wrapper templates
+      - name: Resolve version
+        id: version
         run: |
-          VERSION=$(git describe --tags --abbrev=0)
-          MINOR_TAG=$(echo "$VERSION" | cut -d. -f1,2)
-          MAJOR_TAG=$(echo "$VERSION" | cut -d. -f1)
+          VERSION=$(git tag --points-at HEAD | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "minor=$(echo "$VERSION" | cut -d. -f1,2)" >> $GITHUB_OUTPUT
+          echo "major=$(echo "$VERSION" | cut -d. -f1)" >> $GITHUB_OUTPUT
+
+      - name: Update wrapper templates
+        if: steps.version.outputs.version != ''
+        run: |
+          MINOR_TAG=${{ steps.version.outputs.minor }}
           sed -i "s/@[0-9][0-9a-zA-Z._-]*/@$MINOR_TAG/g" languages/*/wrappers/*.yml .github/workflows/python-integration.yml
           git add languages/*/wrappers/*.yml .github/workflows/python-integration.yml
           if ! git diff --cached --quiet; then
-            git commit -m "chore: release $VERSION [no ci]" --author="repokit <repokit@djachenko>"
-            git tag -f "$VERSION"
+            git commit -m "chore: release ${{ steps.version.outputs.version }} [no ci]" --author="repokit <repokit@djachenko>"
+            git tag -f "${{ steps.version.outputs.version }}"
           fi
           git tag -f "$MINOR_TAG"
-          git tag -f "$MAJOR_TAG"
+          git tag -f "${{ steps.version.outputs.major }}"
 
       - name: Create GitHub release
+        if: steps.version.outputs.version != ''
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          VERSION=$(git tag --sort=-version:refname | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
-          MINOR_TAG=$(echo "$VERSION" | cut -d. -f1,2)
-          MAJOR_TAG=$(echo "$VERSION" | cut -d. -f1)
           git push origin HEAD:master
-          git push origin "refs/tags/$VERSION"
-          git push origin "refs/tags/$MINOR_TAG" --force
-          git push origin "refs/tags/$MAJOR_TAG" --force
-          cog changelog "$VERSION" > /tmp/changelog.md
-          gh release create "$VERSION" --title "$VERSION" --notes-file /tmp/changelog.md || \
-            gh release edit "$VERSION" --notes-file /tmp/changelog.md
+          git push origin "refs/tags/${{ steps.version.outputs.version }}"
+          git push origin "refs/tags/${{ steps.version.outputs.minor }}" --force
+          git push origin "refs/tags/${{ steps.version.outputs.major }}" --force
+          cog changelog "${{ steps.version.outputs.version }}" > /tmp/changelog.md
+          gh release create "${{ steps.version.outputs.version }}" --title "${{ steps.version.outputs.version }}" --notes-file /tmp/changelog.md || \
+            gh release edit "${{ steps.version.outputs.version }}" --notes-file /tmp/changelog.md
