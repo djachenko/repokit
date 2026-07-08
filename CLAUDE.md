@@ -2,8 +2,8 @@
 
 ## Status
 
-- **Последнее** — fix: replace shell rc block with sourced shell.sh (PR #47, merged, 0.9.9). .zshrc больше не коррупируется.
-- **Следующее** — merge PR #48 (readability refactor), проверить реальную установку после 0.9.9
+- **Последнее** — feat: add dotfiles language + run_step override mechanism
+- **Следующее** — протестировать dotfiles язык на реальном репо
 - **Блокеры** — —
 - **Состояние** — активная разработка
 
@@ -21,23 +21,33 @@ Bash-скрипт для бутстрапа новых GitHub-репозитор
 repokit/
 ├── install.sh                     # curl | bash установщик
 ├── repokit                        # оркестратор (точка входа)
-├── init/                          # подскрипты, вызываются в порядке номеров
+├── init/                          # подскрипты, порядок определяется номером
 │   ├── 01_check_tools.sh          # git, gh, gh auth
 │   ├── 02_git_init.sh             # git init
 │   ├── 03_create_repo.sh          # gh repo create + remote
 │   ├── 04_initial_commit.sh       # первый коммит + push
-│   ├── 05_workflows.sh            # копирует wrapper workflows с подстановкой
-│   └── 07_ruleset.sh              # gh api ruleset (required checks, merge-only)
+│   ├── 05_branch_prepare.sh       # создаёт / rebase-ит chore/repokit-setup
+│   ├── 06_workflows.sh            # копирует wrapper workflows с подстановкой
+│   ├── 07_ruleset.sh              # gh api ruleset (required checks, merge-only)
+│   └── 08_branch_push.sh          # пушит ветку, открывает PR
 └── languages/
-    └── python/
-        ├── 06_language_setup.sh   # pyproject.toml + Claude skill
-        ├── instructions.sh        # постустановочный чеклист (только первый запуск)
-        ├── pyproject.toml         # шаблон, плейсхолдеры {{REPO}} {{OWNER}}
-        ├── repokit_skill.md       # Claude skill, копируется в .claude/skills/repokit.md
-        └── wrappers/              # wrapper workflows для клиентских репо
-            ├── tests.yml
-            ├── integration.yml
-            └── release.yml
+    ├── python/
+    │   ├── 06_language_setup.sh   # pyproject.toml + Claude skill
+    │   ├── instructions.sh        # постустановочный чеклист (только первый запуск)
+    │   ├── pyproject.toml         # шаблон, плейсхолдеры {{REPO}} {{OWNER}}
+    │   ├── repokit_skill.md       # Claude skill, копируется в .claude/skills/repokit.md
+    │   └── wrappers/              # wrapper workflows для клиентских репо
+    │       ├── tests.yml
+    │       ├── integration.yml
+    │       └── release.yml
+    └── dotfiles/
+        ├── 05_branch_prepare.sh   # override: остаётся на master, не переключает ветку
+        ├── 07_ruleset.sh          # override: пустой — dotfiles коммитит прямо в master
+        ├── 08_branch_push.sh      # override: только инструкции, без PR
+        ├── setup.sh               # кладёт adopt/install/watch/commit/uninstall/restart
+        ├── instructions.sh        # постустановочный чеклист
+        ├── templates/             # шаблоны скриптов
+        └── wrappers/              # пустые yml — CI не нужен
 ```
 
 Reusable workflows (не попадают в клиентские репо):
@@ -55,13 +65,15 @@ Reusable workflows (не попадают в клиентские репо):
 
 1. Читает `.repokit` (язык, base branch) если файл существует — повторный запуск
 2. Парсит флаги: `--language`, `--force-workflows`, `--force-pyproject`
-3. `01_check_tools.sh` — проверки, выход с понятной ошибкой
+3. `run_step 01_check_tools.sh` — проверки, выход с понятной ошибкой
 4. Определяет состояние: есть ли локальный git, есть ли remote на GitHub
 5. Создаёт git / remote / initial commit только если их нет
-6. Создаёт или rebases ветку `chore/repokit-setup` на base branch
-7. Запускает `05_workflows.sh`, `${LANGUAGE}_setup.sh`, `06_ruleset.sh`
-8. Пушит ветку, открывает PR
-9. `instructions.sh` — только на первом запуске (когда `.repokit` не было до старта)
+6. `run_step 05_branch_prepare.sh` — создаёт или rebase-ит `chore/repokit-setup`
+7. `run_step 06_workflows.sh`, `languages/$LANGUAGE/setup.sh`, `run_step 07_ruleset.sh`
+8. `run_step 08_branch_push.sh` — пушит ветку, открывает PR
+9. `instructions.sh` — только на первом запуске
+
+`run_step` проверяет наличие `languages/$LANGUAGE/<step>` и использует его вместо дефолтного `init/<step>`. Языки могут переопределять любой шаг.
 
 ---
 
@@ -90,7 +102,7 @@ Reusable workflows (не попадают в клиентские репо):
 
 ## Ruleset
 
-`06_ruleset.sh` динамически вычисляет required status checks из wrapper workflows:
+`07_ruleset.sh` динамически вычисляет required status checks из wrapper workflows:
 - Парсит jobs в `tests.yml` и `integration.yml`
 - Для reusable workflow jobs раскрывает terminal job из reusable файла
 - Применяет ruleset через GitHub API (delete + create)
