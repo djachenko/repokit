@@ -1,0 +1,19 @@
+#!/bin/bash
+set -e
+export PATH="/opt/homebrew/bin:$PATH"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+LOG="$SCRIPT_DIR/logs/watch.log"
+mkdir -p "$SCRIPT_DIR/logs"
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] watch started" >> "$LOG"
+
+fswatch -o --latency 1 \
+  --exclude "$SCRIPT_DIR/logs" \
+  --exclude "$SCRIPT_DIR/.git" \
+  "$SCRIPT_DIR" \
+| while read -r _count; do
+    while read -r -t 60 _; do :; done
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] committing" >> "$LOG"
+    "$SCRIPT_DIR/commit" >> "$LOG" 2>&1 \
+      && echo "[$(date '+%Y-%m-%d %H:%M:%S')] done" >> "$LOG" \
+      || echo "[$(date '+%Y-%m-%d %H:%M:%S')] commit failed" >> "$LOG"
+  done

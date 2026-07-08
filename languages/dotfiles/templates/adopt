@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DOTFILES="$(cd "$(dirname "$0")" && pwd)"
+file="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
+
+[[ -n "$1" ]] || { echo "Usage: adopt <file>" >&2; exit 1; }
+[[ "$file" == "$HOME/"* ]] || { echo "error: not under \$HOME" >&2; exit 1; }
+[[ ! -L "$file" ]] || { echo "error: already a symlink" >&2; exit 1; }
+
+rel="${file#$HOME/}"
+dest="$DOTFILES/$rel"
+
+[[ ! -e "$dest" ]] || { echo "error: $dest already exists" >&2; exit 1; }
+
+mkdir -p "$(dirname "$dest")"
+mv "$file" "$dest"
+ln -s "$dest" "$file"
+echo "adopted: ~/$rel → $dest"

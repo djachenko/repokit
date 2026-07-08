@@ -26,6 +26,7 @@ AVAILABLE_LANGUAGES_DISPLAY=$(echo "$AVAILABLE_LANGUAGES" | tr '\n' ' ')
 # .repokit is written at the end of every successful run, so its presence
 # means this is a re-run (update), not the first setup.
 IS_FIRST_SETUP=true
+export IS_FIRST_SETUP
 if [[ -f .repokit ]]; then
   # Extract the value after "language=" on that line.
   # grep '^language=' selects only the matching line; cut -d= -f2 splits on
@@ -172,9 +173,21 @@ ask_yn() {
 }
 export -f ask_yn
 
+run_step() {
+  local step="$1"
+  local override="$SCRIPT_DIR/languages/$LANGUAGE/$step"
+  if [[ -f "$override" ]]; then
+    # shellcheck source=/dev/null
+    source "$override"
+  else
+    # shellcheck source=/dev/null
+    source "$SCRIPT_DIR/init/$step"
+  fi
+}
+
 # ── Preflight: verify git, gh, auth ──────────────────────────────────────────
 
-bash "$SCRIPT_DIR/init/01_check_tools.sh"
+run_step 01_check_tools.sh
 
 export OWNER
 # Call the GitHub API to get the authenticated user's login name.
@@ -206,7 +219,7 @@ if [[ "$HAS_GIT" == false ]]; then
   # Exit cleanly if the user declines.
   # ask_yn returns non-zero on "no"; || runs the right side on failure.
   ask_yn "Init git in $(pwd)?" || exit 0
-  bash "$SCRIPT_DIR/init/02_git_init.sh"
+  run_step 02_git_init.sh
 fi
 
 # Switch the remote from HTTPS to SSH if needed.
@@ -233,7 +246,7 @@ fi
 
 if [[ "$HAS_REMOTE" == false ]]; then
   ask_yn "Create GitHub repo '$OWNER/$REPO'?" || exit 0
-  bash "$SCRIPT_DIR/init/03_create_repo.sh"
+  run_step 03_create_repo.sh
 
   # If the repo already has commits (user committed manually before running
   # repokit), push them. Otherwise create the initial commit.
@@ -245,70 +258,13 @@ if [[ "$HAS_REMOTE" == false ]]; then
     # -u = set upstream tracking so future git push/pull work without arguments.
     run_quiet git push -u origin master
   else
-    bash "$SCRIPT_DIR/init/04_initial_commit.sh"
+    run_step 04_initial_commit.sh
   fi
 fi
 
 # ── Setup branch: create or rebase onto latest base ──────────────────────────
-#
-# All repokit changes land on chore/repokit-setup and go through a PR.
-# On re-runs we rebase the branch onto the current base instead of recreating
-# it, so any manual fixes on the branch are preserved.
 
-BRANCH="chore/repokit-setup"
-# Get the current branch name as a human-readable string (e.g. "main"),
-# not a SHA. --abbrev-ref HEAD = "abbreviate the ref HEAD points to".
-CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-
-if [[ "$CURRENT_BRANCH" == "$BRANCH" ]]; then
-  # We're already on the setup branch — probably a re-run after a partial
-  # failure. Read the base branch that was saved to .repokit.
-  # 2>/dev/null = don't error if the file is missing.
-  BASE_BRANCH=$(grep '^base_branch=' .repokit 2>/dev/null | cut -d= -f2)
-  # ${var:-default} = use "master" if BASE_BRANCH is empty or unset.
-  BASE_BRANCH=${BASE_BRANCH:-master}
-else
-  # Normal case: whatever branch we're on becomes the base.
-  BASE_BRANCH="$CURRENT_BRANCH"
-fi
-
-run_quiet git fetch origin "$BASE_BRANCH"
-
-# Check whether the setup branch already exists on the remote.
-# git ls-remote lists refs on origin; --exit-code makes it exit non-zero
-# if the ref isn't found; --heads restricts to branches (refs/heads/*).
-# &>/dev/null = discard all output, check exit code only.
-BRANCH_ON_REMOTE=false
-if git ls-remote --exit-code --heads origin "$BRANCH" &>/dev/null; then
-  BRANCH_ON_REMOTE=true
-  run_quiet git fetch origin "$BRANCH"
-fi
-
-# Check whether the setup branch exists locally.
-# git rev-parse --verify resolves a name to a SHA; exits non-zero if not found.
-LOCAL_BRANCH_EXISTS=false
-git rev-parse --verify "$BRANCH" &>/dev/null && LOCAL_BRANCH_EXISTS=true
-
-if $LOCAL_BRANCH_EXISTS || $BRANCH_ON_REMOTE; then
-  echo "→ Updating branch $BRANCH from origin/$BASE_BRANCH..."
-  if $LOCAL_BRANCH_EXISTS; then
-    run_quiet git checkout "$BRANCH"
-  else
-    # Recreate the local branch tracking the remote version.
-    # -B = create the branch if missing, or reset it to the given start point.
-    run_quiet git checkout -B "$BRANCH" "origin/$BRANCH"
-  fi
-  if ! run_quiet git rebase "origin/$BASE_BRANCH"; then
-    # Clean up the half-finished rebase before we exit.
-    # 2>/dev/null || true = ignore errors if there's nothing to abort.
-    git rebase --abort 2>/dev/null || true
-    echo "Error: could not rebase $BRANCH onto origin/$BASE_BRANCH — resolve manually."
-    exit 1
-  fi
-else
-  echo "→ Creating branch $BRANCH from origin/$BASE_BRANCH..."
-  run_quiet git checkout -B "$BRANCH" "origin/$BASE_BRANCH"
-fi
+run_step 05_branch_prepare.sh
 
 # ── Write .repokit marker + update .gitignore ────────────────────────────────
 
@@ -346,59 +302,10 @@ fi
 # Prepending VAR=value to a command sets that variable only in the environment
 # of that single command — the current shell's value is unchanged afterwards.
 
-REPOKIT_FORCE=$FORCE_WORKFLOWS bash "$SCRIPT_DIR/init/05_workflows.sh"
+REPOKIT_FORCE=$FORCE_WORKFLOWS run_step 06_workflows.sh
 REPOKIT_FORCE=$FORCE_PYPROJECT bash "$SCRIPT_DIR/languages/$LANGUAGE/06_language_setup.sh"
-bash "$SCRIPT_DIR/init/07_ruleset.sh"
+run_step 07_ruleset.sh
 
 # ── Push setup branch + open PR ──────────────────────────────────────────────
 
-# Check whether there are any new commits to push.
-# "A..B" = commits reachable from B but not from A (i.e. commits added on
-# BRANCH since it diverged from origin/BASE_BRANCH). --oneline = one line per
-# commit. grep -q . = "any line exists" (. = any character, -q = silent).
-if git log "origin/$BASE_BRANCH..$BRANCH" --oneline 2>/dev/null | grep -q .; then
-  echo "→ Pushing $BRANCH..."
-  if $BRANCH_ON_REMOTE; then
-    echo "  force-pushing (rebased onto origin/$BASE_BRANCH)..."
-    # Force push, but only if the remote hasn't changed since our last fetch.
-    # --force-with-lease checks that the remote's current SHA matches what we
-    # fetched; it refuses if someone else pushed in the meantime. Safer than
-    # --force which overwrites blindly.
-    if ! run_quiet git push --force-with-lease -u origin "$BRANCH"; then
-      echo "Error: could not push $BRANCH — origin has changes repokit didn't expect (pushed manually, or changed since the last fetch)."
-      echo "Resolve manually, e.g.: git push --force origin $BRANCH"
-      exit 1
-    fi
-  elif ! run_quiet git push -u origin "$BRANCH"; then
-    echo "Error: could not push $BRANCH."
-    exit 1
-  fi
-
-  # Open a PR; ignore the error if one already exists for this branch.
-  # 2>/dev/null = discard the "already exists" error message.
-  # || true = prevent set -e from aborting on the non-zero exit code.
-  gh pr create \
-    --title "chore: [repokit] setup" \
-    --body "Automated repository setup by repokit." \
-    --base "$BASE_BRANCH" 2>/dev/null || true
-
-  # Show the post-install checklist only on the very first run. After that the
-  # user has already done the one-time steps (secrets, trusted publishers).
-  if [[ "$IS_FIRST_SETUP" == true ]]; then
-    bash "$SCRIPT_DIR/languages/$LANGUAGE/instructions.sh"
-  fi
-
-  echo ""
-  echo "✓ Done: https://github.com/$OWNER/$REPO"
-else
-  echo ""
-  echo "✓ Already up to date"
-fi
-
-# Remove base_branch from .repokit after the run — it was only needed to pass
-# the value to subshells. It's re-derived from the current branch on the next
-# run, so leaving it would create stale state.
-# sed -i '' = edit in place with no backup file (BSD/macOS sed requires the
-# empty string argument after -i; GNU sed on Linux accepts just -i).
-# /^base_branch=/d = delete every line that starts with "base_branch=".
-sed -i '' '/^base_branch=/d' .repokit
+run_step 08_branch_push.sh

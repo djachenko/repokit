@@ -1,0 +1,36 @@
+#!/bin/bash
+set -e
+cd "$(dirname "$0")"
+
+RAW=$(git status --porcelain)
+CHANGED=$(echo "$RAW" | cut -c4-)
+[ -z "$CHANGED" ] && exit 0
+
+KEYS=$(echo "$CHANGED" | awk -F/ '
+    NF >= 3 { print $1"/"$2 }
+    NF == 2 { print $1 }
+    NF == 1 { print "." }
+' | sort -u)
+
+while IFS= read -r key; do
+    FILES=$(echo "$CHANGED" | awk -F/ -v k="$key" '
+        NF >= 3 && $1"/"$2 == k { print $0 }
+        NF == 2 && $1 == k      { print $0 }
+        NF == 1 && k == "."     { print $0 }
+    ')
+    while IFS= read -r f; do git add "$f"; done <<< "$FILES"
+
+    file_list=$(while IFS= read -r f; do
+        xy=$(printf '%s\n' "$RAW" | awk -v p="$f" 'substr($0,4)==p{print substr($0,1,2);exit}')
+        first="${xy:0:1}"
+        if [ "$first" = "?" ] || [ "$first" = "A" ]; then sym="+"
+        elif [ "$first" = "D" ]; then sym="-"
+        else sym="~"
+        fi
+        echo "$sym $(basename "$f")"
+    done <<< "$FILES" | sort)
+
+    count=$(echo "$file_list" | wc -l | tr -d ' ')
+    [ "$count" -eq 1 ] && noun="file" || noun="files"
+    git commit -m "auto: $key ($count $noun)" -m "$file_list"
+done <<< "$KEYS"
