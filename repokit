@@ -346,7 +346,7 @@ fi
 # Prepending VAR=value to a command sets that variable only in the environment
 # of that single command — the current shell's value is unchanged afterwards.
 
-REPOKIT_FORCE=$FORCE_WORKFLOWS bash "$SCRIPT_DIR/init/05_workflows.sh"
+REPOKIT_FORCE=$FORCE_WORKFLOWS bash "$SCRIPT_DIR/init/06_workflows.sh"
 REPOKIT_FORCE=$FORCE_PYPROJECT bash "$SCRIPT_DIR/languages/$LANGUAGE/06_language_setup.sh"
 bash "$SCRIPT_DIR/init/07_ruleset.sh"
 
