@@ -2,6 +2,30 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.9.10 - 2026-07-08
+#### Bug Fixes
+- detect release via git tag sort instead of git describe - (7de3655) - Igor Djachenko
+- update references after init script renames - (dee71b1) - Igor Djachenko
+#### Documentation
+- update Status — PR #47 merged, 0.9.9 released - (a0b29cb) - Igor Djachenko
+- add comments to 01_check_tools and 02_git_init - (7d8ecdd) - Igor Djachenko
+- update Status block with shell rc fix - (7cadfbc) - Igor Djachenko
+- add line-by-line comments to bash scripts - (2778beb) - Igor Djachenko
+- add extensive inline comments to bash scripts - (157f5fe) - Igor Djachenko
+- expand repokit skill and update CLAUDE.md structure - (48d0305) - Igor Djachenko
+#### Continuous Integration
+- skip tests on master push (already ran via integration PR) - (1a5f14d) - Igor Djachenko
+#### Refactoring
+- add sequence numbers to language_setup and ruleset, meaning-first comments in repokit - (a177022) - Igor Djachenko
+- rename language-specific setup scripts to language_setup.sh - (074be06) - Igor Djachenko
+- add section comments, IS_FIRST_SETUP flag, cleaner variable names - (3156f93) - Igor Djachenko
+#### Miscellaneous Chores
+- set initial version to 0.0.0 in pyproject template - (93c5cc0) - Igor Djachenko
+#### Style
+- add blank lines to break up text walls in scripts - (c4ccea9) - Igor Djachenko
+
+- - -
+
 ## 0.9.9 - 2026-07-07
 #### Bug Fixes
 - replace shell rc block with sourced shell.sh - (3fd267e) - Igor Djachenko
