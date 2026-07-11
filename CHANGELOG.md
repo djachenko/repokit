@@ -2,6 +2,15 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.10.1 - 2026-07-11
+#### Bug Fixes
+- correct Trusted Publisher workflow paths and secret name - (65f5be8) - Igor Djachenko
+#### Documentation
+- update DECISIONS — bypass_actors and ruleset DELETE+POST - (3820880) - Igor Djachenko
+- fix flag name and required checks description in README - (e6feaba) - Igor Djachenko
+
+- - -
+
 ## 0.10.0 - 2026-07-08
 #### Features
 - add dotfiles language - (c98f3d8) - Igor Djachenko
