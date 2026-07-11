@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.10.2 - 2026-07-11
+#### Bug Fixes
+- mask run_quiet exit code from set -e - (7ff7282) - Igor Djachenko
+
+- - -
+
 ## 0.10.1 - 2026-07-11
 #### Bug Fixes
 - correct Trusted Publisher workflow paths and secret name - (65f5be8) - Igor Djachenko
