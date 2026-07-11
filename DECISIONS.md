@@ -20,17 +20,17 @@ Workflow-файлы и pyproject.toml живут в `templates/` как наст
 
 Проекты без юнитов не должны ломать CI. Pytest возвращает exit code 5 если тесты не найдены — обрабатываем явно.
 
-### bypass_actors убран из ruleset
+### bypass_actors: хардкод App ID автора
 
-Не работает для personal repos через GitHub API — убрали, не добавлять обратно.
+`07_ruleset.sh` содержит `actor_id: 2991967` — ID GitHub App автора. Это позволяет release-workflow пушить тег в master в обход ruleset. Для чужих пользователей ID будет другим — нужно либо вынести в `.repokit`, либо резолвить через `gh api /apps/{slug}`. До тех пор инструмент рассчитан на личное использование.
 
 ### required_status_checks: один контекст "integration"
 
 Матрица в `integration.yml` создаёт много контекстов. Required check — только финальный job `integration` (depends on `test`), не отдельные матричные джобы.
 
-### Ruleset: GET → PATCH/POST вместо тупого POST
+### Ruleset: GET → DELETE → POST
 
-Тупой POST создаёт дубли если ruleset уже есть. Решение: проверяем список через GET, если нашли по имени — PATCH (полная замена, не merge), нет — POST. PATCH на GitHub рулсетах перетирает полностью, не мержит JSON.
+POST создаёт дубли если ruleset уже есть. Решение: GET по имени, если нашли — DELETE, затем POST. PATCH на GitHub Rulesets API официально не задокументирован и ведёт себя непредсказуемо, поэтому DELETE + POST. Недостаток: короткое окно между DELETE и POST без защиты ветки.
 
 ### Ruleset name: не "master"
 
