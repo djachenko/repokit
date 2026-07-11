@@ -128,15 +128,8 @@ export REPOKIT_AUTHOR="repokit <repokit@djachenko>"
 # Run a command silently; print its output only if it fails.
 # Keeps the UI clean on success while still surfacing error details.
 run_quiet() {
-  local out status
-
-  # Run the command ($@ = all arguments as separate words, preserving spaces).
-  # Redirect stderr to stdout (2>&1 = "send fd 2 to wherever fd 1 goes") so
-  # both streams are captured together into $out.
-  out=$("$@" 2>&1)
-
-  # Capture exit code immediately — $? is overwritten by the next command.
-  status=$?
+  local out status=0
+  out=$("$@" 2>&1) || status=$?
 
   if [[ $status -ne 0 ]]; then
     # Send captured output to stderr (>&2 = "send stdout to fd 2") so it
