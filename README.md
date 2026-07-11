@@ -31,7 +31,7 @@ When repokit is updated, all repos using its shared workflows pick up the change
 To override the ownership check and force-overwrite:
 
 ```bash
-repokit --language bash --skip-owner-check
+repokit --language bash --force-workflows
 ```
 
 ## Ruleset
@@ -41,7 +41,7 @@ Applied to the default branch. Nobody can push directly — all changes go throu
 - No branch deletion
 - No force push
 - PR required to merge; only merge commits allowed (no squash, no rebase)
-- Required status check: `integration / integration` must pass before merge
+- Required status checks derived from wrapper workflows (e.g. `tests / test`, `integration / integration`)
 
 ## Requirements
 
@@ -98,9 +98,9 @@ languages/<name>/
 
 **Post-setup checklist:**
 
-1. Add GitHub App secrets: `APP_ID`, `APP_PRIVATE_KEY`
-2. Add Trusted Publisher on [PyPI](https://pypi.org/manage/account/publishing/) — workflow: `.github/workflows/python-release.yml` in `djachenko/repokit`
-3. Add Trusted Publisher on [TestPyPI](https://test.pypi.org/manage/account/publishing/) — workflow: `.github/workflows/python-integration.yml` in `djachenko/repokit`
+1. Add GitHub App secrets: `APP_CLIENT_ID`, `APP_PRIVATE_KEY`
+2. Add Trusted Publisher on [PyPI](https://pypi.org/manage/account/publishing/) — owner: `<you>`, repo: `<repo>`, workflow: `release.yml`
+3. Add Trusted Publisher on [TestPyPI](https://test.pypi.org/manage/account/publishing/) — owner: `<you>`, repo: `<repo>`, workflow: `integration.yml`
 
 ---
 
