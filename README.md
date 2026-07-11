@@ -31,7 +31,7 @@ When repokit is updated, all repos using its shared workflows pick up the change
 To override the ownership check and force-overwrite:
 
 ```bash
-repokit --language bash --skip-owner-check
+repokit --language bash --force-workflows
 ```
 
 ## Ruleset
@@ -41,7 +41,7 @@ Applied to the default branch. Nobody can push directly — all changes go throu
 - No branch deletion
 - No force push
 - PR required to merge; only merge commits allowed (no squash, no rebase)
-- Required status check: `integration / integration` must pass before merge
+- Required status checks derived from wrapper workflows (e.g. `tests / test`, `integration / integration`)
 
 ## Requirements
 
