@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.10.3 - 2026-07-13
+#### Bug Fixes
+- allow empty initial commit for empty folder - (4ba8179) - Igor Djachenko
+
+- - -
+
 ## 0.10.2 - 2026-07-11
 #### Bug Fixes
 - mask run_quiet exit code from set -e - (7ff7282) - Igor Djachenko
