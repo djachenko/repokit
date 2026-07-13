@@ -8,7 +8,7 @@ echo "→ Committing..."
 # repo, so there are no pre-existing tracked files to accidentally include.
 # Subsequent repokit commits always use named files.
 git add .
-repokit_commit "initial setup"
+run_quiet git commit --allow-empty -m "chore: [repokit] initial setup" --author="$REPOKIT_AUTHOR"
 
 # -u sets the upstream so future `git push` / `git pull` work without arguments.
 run_quiet git push -u origin master
