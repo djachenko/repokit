@@ -82,10 +82,6 @@ lines = p.read_text().splitlines(keepends=True)
 lines = [l for l in lines if 'repokit/shell.sh' not in l]
 p.write_text(''.join(lines))
 " 2>/dev/null || true
-  # Only unset hooksPath if it still points to our directory — the user may have
-  # changed it to something else after installing repokit.
-  current_hooks=$(git config --global core.hooksPath 2>/dev/null || true)
-  [[ "$current_hooks" == "__INSTALL_DIR__/hooks" ]] && git config --global --unset core.hooksPath 2>/dev/null || true
   echo "repokit uninstalled. Restart your shell."
 }
 SHELLEOF
@@ -103,19 +99,6 @@ if line.strip() not in t:
 " 2> /dev/null || true
 
 echo "Added repokit to $SHELL_RC. Restart shell or: source $SHELL_RC"
-
-# Install git hooks globally so pre-push checks run in every repo on this machine.
-# Warn if an existing hooksPath is set to something other than our own directory —
-# overwriting it silently would disable the user's existing hooks.
-existing_hooks=$(git config --global core.hooksPath 2> /dev/null || true)
-if [[ -n "$existing_hooks" && "$existing_hooks" != "$INSTALL_DIR/hooks" ]]; then
-  echo "! core.hooksPath is already set to '$existing_hooks'"
-  echo "  Overwriting with repokit hooks: $INSTALL_DIR/hooks"
-  echo "  If you relied on the previous hooks, restore them with:"
-  echo "    git config --global core.hooksPath '$existing_hooks'"
-fi
-git config --global core.hooksPath "$INSTALL_DIR/hooks"
-echo "Git hooks configured globally"
 
 if [[ -n "$CURRENT" ]]; then
   echo "Updated: repokit $CURRENT → $VERSION"
