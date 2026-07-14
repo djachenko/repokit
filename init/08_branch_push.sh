@@ -27,4 +27,5 @@ else
   echo "✓ Already up to date"
 fi
 
-sed -i '' '/^base_branch=/d' .repokit
+# -i.bak works on both BSD (macOS) and GNU sed; '' alone breaks on Linux.
+sed -i.bak '/^base_branch=/d' .repokit && rm -f .repokit.bak

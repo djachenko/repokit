@@ -5,4 +5,5 @@ bash "$SCRIPT_DIR/languages/$LANGUAGE/instructions.sh"
 echo ""
 echo "✓ Done: https://github.com/$OWNER/$REPO"
 
-sed -i '' '/^base_branch=/d' .repokit
+# -i.bak works on both BSD (macOS) and GNU sed; '' alone breaks on Linux.
+sed -i.bak '/^base_branch=/d' .repokit && rm -f .repokit.bak
