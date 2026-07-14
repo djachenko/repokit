@@ -129,6 +129,11 @@ export REPOKIT_AUTHOR="repokit <repokit@djachenko>"
 # Keeps the UI clean on success while still surfacing error details.
 run_quiet() {
   local out status=0
+
+  # "$@" passes all arguments as separate words, preserving spaces in filenames etc.
+  # 2>&1 redirects stderr into stdout so both streams are captured together in $out.
+  # || status=$? masks the exit code from set -e so the script doesn't die here;
+  # on success status stays 0, on failure status gets the real exit code.
   out=$("$@" 2>&1) || status=$?
 
   if [[ $status -ne 0 ]]; then
