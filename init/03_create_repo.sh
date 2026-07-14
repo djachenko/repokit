@@ -4,7 +4,7 @@ set -e
 
 echo "→ Creating repository $OWNER/$REPO..."
 
-run_quiet gh repo create "$OWNER/$REPO" --$VISIBILITY
+run_quiet gh repo create "$OWNER/$REPO" --"$VISIBILITY"
 
 # Enable auto-merge so that a PR with all checks green can be merged automatically
 # without a second click — useful once branch protection is in place.

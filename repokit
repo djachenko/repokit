@@ -275,6 +275,7 @@ if [[ "$HAS_REMOTE" == false ]]; then
   sensitive_patterns=(".env" ".env.*" "*.pem" "*.key" "*.p8" "*.p12" "*.pfx" "secrets.*" "credentials.*" "*.secret")
   to_ignore=()
   for pattern in "${sensitive_patterns[@]}"; do
+    # shellcheck disable=SC2206  # glob expansion under nullglob is intentional
     matches=($pattern)
     # matches[@] expands to the list of files; -gt 0 = at least one file found.
     if [[ ${#matches[@]} -gt 0 ]]; then
