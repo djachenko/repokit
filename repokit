@@ -267,9 +267,13 @@ run_step 05_branch_prepare.sh
 # ── Write .repokit marker + update .gitignore ────────────────────────────────
 
 # Write current run's settings to .repokit so re-runs and subshells can read them.
-# printf 'format' args = like Python's format string; %s = string, \n = newline.
-# > = overwrite the file (>> would append).
-printf 'language=%s\nbase_branch=%s\n' "$LANGUAGE" "$BASE_BRANCH" > .repokit
+# app_id is set manually by the user after creating their GitHub App; preserve it
+# across re-runs so the ruleset step can include it in bypass_actors.
+existing_app_id=$(grep '^app_id=' .repokit 2>/dev/null | cut -d= -f2)
+{
+  printf 'language=%s\nbase_branch=%s\n' "$LANGUAGE" "$BASE_BRANCH"
+  [[ -n "$existing_app_id" ]] && printf 'app_id=%s\n' "$existing_app_id"
+} > .repokit
 
 # Add .repokit to .gitignore if it isn't already listed there.
 # grep -qxF: -q = silent (exit code only); -x = whole-line match (not substring);
