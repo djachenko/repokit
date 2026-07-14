@@ -54,7 +54,7 @@ fi
 if [[ "$IS_FIRST_SETUP" == true && ! -d "src/$REPO" ]]; then
   echo "→ Scaffolding src/$REPO/__init__.py..."
   mkdir -p "src/$REPO"
-  printf '"""%s package."""\n' "$REPO" > "src/$REPO/__init__.py"
+  touch "src/$REPO/__init__.py"
   git add "src/$REPO/__init__.py"
   repokit_commit "scaffold src/$REPO package"
 fi
