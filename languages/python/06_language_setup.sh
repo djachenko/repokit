@@ -45,6 +45,20 @@ elif ask_yn "Create Claude skill for repokit integration?"; then
   fi
 fi
 
+# ── Package skeleton ──────────────────────────────────────────────────────────
+#
+# hatchling (the build backend in pyproject.toml) requires src/$REPO/ to exist.
+# Without it, `pip install -e ".[test]"` fails and the integration CI is red
+# from the first push. Only scaffold on first setup — don't overwrite user code.
+
+if [[ "$IS_FIRST_SETUP" == true && ! -d "src/$REPO" ]]; then
+  echo "→ Scaffolding src/$REPO/__init__.py..."
+  mkdir -p "src/$REPO"
+  touch "src/$REPO/__init__.py"
+  git add "src/$REPO/__init__.py"
+  repokit_commit "scaffold src/$REPO package"
+fi
+
 # ── pyproject.toml ────────────────────────────────────────────────────────────
 #
 # Skip if the user has modified the file (they added classifiers, dependencies,
