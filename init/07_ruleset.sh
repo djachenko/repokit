@@ -110,6 +110,16 @@ done
 
 contexts_json="${contexts_json%,}" # strip trailing comma
 
+# Read app_id from .repokit (user sets this after creating their GitHub App).
+# If absent, bypass_actors is empty — direct master pushes will be blocked by
+# the ruleset until the App is configured and repokit is re-run.
+app_id=$(grep '^app_id=' .repokit 2> /dev/null | cut -d= -f2)
+if [[ -n "$app_id" ]]; then
+  bypass_actors_json='[{"actor_id": '"$app_id"', "actor_type": "Integration", "bypass_mode": "always"}]'
+else
+  bypass_actors_json='[]'
+fi
+
 # ── Apply ruleset via GitHub API ──────────────────────────────────────────────
 #
 # The Rulesets API has no PATCH/update endpoint that's safe to use idempotently,
@@ -136,13 +146,7 @@ gh api "repos/$OWNER/$REPO/rulesets" \
       "exclude": []
     }
   },
-  "bypass_actors": [
-    {
-      "actor_id": 2991967,
-      "actor_type": "Integration",
-      "bypass_mode": "always"
-    }
-  ],
+  "bypass_actors": $bypass_actors_json,
   "rules": [
     { "type": "deletion" },
     { "type": "non_fast_forward" },
