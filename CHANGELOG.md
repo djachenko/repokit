@@ -2,6 +2,14 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.10.6 - 2026-07-17
+#### Bug Fixes
+- scaffold src/ on first setup, note TestPyPI order in instructions - (2bbc706) - Igor Djachenko
+#### Style
+- touch __init__.py instead of writing placeholder content - (f5b8cd3) - Igor Djachenko
+
+- - -
+
 ## 0.10.5 - 2026-07-17
 #### Bug Fixes
 - validate REPO name before any sed substitutions - (5214279) - Igor Djachenko
