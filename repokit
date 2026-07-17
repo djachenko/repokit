@@ -123,6 +123,14 @@ export REPO
 # Repo name = last component of the current directory path.
 # basename strips everything up to and including the last "/".
 REPO=$(basename "$PWD")
+# GitHub repo names allow only letters, digits, hyphens, dots, and underscores.
+# A name with & would corrupt all sed substitutions (&=matched string in replacement).
+# A name with spaces would produce an invalid GitHub repo URL.
+if [[ ! "$REPO" =~ ^[A-Za-z0-9._-]+$ ]]; then
+  echo "Error: directory name '$REPO' is not a valid GitHub repository name."
+  echo "Rename the directory to use only letters, digits, hyphens, dots, and underscores."
+  exit 1
+fi
 export REPOKIT_AUTHOR="repokit <repokit@djachenko>"
 
 # Run a command silently; print its output only if it fails.
