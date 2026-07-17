@@ -2,6 +2,14 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.10.4 - 2026-07-17
+#### Bug Fixes
+- explicit -b master in git init, HEAD in push - (55c11e6) - Igor Djachenko
+#### Style
+- restore explanatory comments in run_quiet - (ee7d5ec) - Igor Djachenko
+
+- - -
+
 ## 0.10.3 - 2026-07-13
 #### Bug Fixes
 - allow empty initial commit for empty folder - (4ba8179) - Igor Djachenko
