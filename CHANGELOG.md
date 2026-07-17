@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.10.5 - 2026-07-17
+#### Bug Fixes
+- validate REPO name before any sed substitutions - (5214279) - Igor Djachenko
+
+- - -
+
 ## 0.10.4 - 2026-07-17
 #### Bug Fixes
 - explicit -b master in git init, HEAD in push - (55c11e6) - Igor Djachenko
