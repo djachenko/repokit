@@ -254,7 +254,7 @@ if [[ "$HAS_REMOTE" == false ]]; then
   if git log --oneline 2>/dev/null | grep -q .; then
     echo "→ Pushing existing history..."
     # -u = set upstream tracking so future git push/pull work without arguments.
-    run_quiet git push -u origin master
+    run_quiet git push -u origin HEAD
   else
     run_step 04_initial_commit.sh
   fi
