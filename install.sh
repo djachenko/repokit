@@ -5,7 +5,16 @@ set -e
 REPO="djachenko/repokit"
 # Follow the redirect from /releases/latest to get the tag name without hitting
 # the GitHub API (which has rate limits and requires auth for higher limits).
-VERSION=$(curl -fsSLI -o /dev/null -w '%{url_effective}' "https://github.com/$REPO/releases/latest" | sed 's|.*/||')
+LATEST_URL=$(curl -fsSLI -o /dev/null -w '%{url_effective}' "https://github.com/$REPO/releases/latest") ||
+  {
+    echo "✗ Failed to reach GitHub" >&2
+    exit 1
+  }
+VERSION=$(printf '%s' "$LATEST_URL" | sed 's|.*/||')
+[[ -n "$VERSION" ]] || {
+  echo "✗ Could not detect latest version" >&2
+  exit 1
+}
 TARBALL_URL="https://github.com/$REPO/archive/refs/tags/$VERSION.tar.gz"
 INSTALL_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/repokit"
 
@@ -29,9 +38,16 @@ curl -fsSL "$TARBALL_URL" | tar xz -C "$TMP"
 
 echo "Installing to $INSTALL_DIR..."
 
-# Replace the whole install dir atomically — no partial state if something fails mid-copy.
-rm -rf "$INSTALL_DIR"
-mv "$TMP"/repokit-"$VERSION" "$INSTALL_DIR"
+# Move old install dir aside so we can restore it if the new install fails.
+BAK="$INSTALL_DIR.bak"
+rm -rf "$BAK"
+[[ -d "$INSTALL_DIR" ]] && mv "$INSTALL_DIR" "$BAK"
+mv "$TMP"/repokit-"$VERSION" "$INSTALL_DIR" || {
+  echo "✗ Install failed" >&2
+  [[ -d "$BAK" ]] && mv "$BAK" "$INSTALL_DIR"
+  exit 1
+}
+rm -rf "$BAK"
 
 # install.sh is a bootstrap — it has no purpose inside the installed tree.
 rm -f "$INSTALL_DIR/install.sh"
@@ -53,16 +69,6 @@ chmod +x "$INSTALL_DIR/repokit" "$INSTALL_DIR"/init/*.sh "$INSTALL_DIR"/hooks/*
 # New approach: write integration to $INSTALL_DIR/shell.sh once, then add a
 # single `source` line to the rc. On update, shell.sh is overwritten in-place —
 # the rc line stays the same, no rc edits needed.
-
-# Migrate: remove old-style BEGIN/END block if present.
-# Using Python because BSD sed (macOS) and GNU sed handle -i differently.
-python3 -c "
-import re, pathlib
-p = pathlib.Path('$SHELL_RC')
-t = p.read_text()
-t = re.sub(r'\n?# BEGIN repokit\n.*?# END repokit\n?', '', t, flags=re.DOTALL)
-p.write_text(t)
-" 2> /dev/null || true
 
 # Write shell integration to its own file — never touch the rc again after this.
 # Placeholders __INSTALL_DIR__ and __SHELL_RC__ are substituted by sed below
@@ -89,8 +95,19 @@ SHELLEOF
 
 sed -i '' "s|__INSTALL_DIR__|$INSTALL_DIR|g; s|__SHELL_RC__|$SHELL_RC|g" "$INSTALL_DIR/shell.sh"
 
-# Add source line to rc once — idempotent on updates since the line is identical.
-python3 -c "
+if command -v python3 &> /dev/null; then
+  # Migrate: remove old-style BEGIN/END block if present.
+  # Using Python because BSD sed (macOS) and GNU sed handle -i differently.
+  python3 -c "
+import re, pathlib
+p = pathlib.Path('$SHELL_RC')
+t = p.read_text()
+t = re.sub(r'\n?# BEGIN repokit\n.*?# END repokit\n?', '', t, flags=re.DOTALL)
+p.write_text(t)
+" 2> /dev/null || true
+
+  # Add source line to rc once — idempotent on updates since the line is identical.
+  python3 -c "
 import pathlib
 p = pathlib.Path('$SHELL_RC')
 t = p.read_text()
@@ -99,7 +116,11 @@ if line.strip() not in t:
     p.write_text(t.rstrip('\n') + '\n' + line)
 " 2> /dev/null || true
 
-echo "Added repokit to $SHELL_RC. Restart shell or: source $SHELL_RC"
+  echo "Added repokit to $SHELL_RC. Restart shell or: source $SHELL_RC"
+else
+  echo "⚠ python3 not found — add to $SHELL_RC manually:"
+  echo "  [ -f \"$INSTALL_DIR/shell.sh\" ] && source \"$INSTALL_DIR/shell.sh\""
+fi
 
 # Install git hooks globally so pre-push checks run in every repo on this machine.
 git config --global core.hooksPath "$INSTALL_DIR/hooks"
