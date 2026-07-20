@@ -87,7 +87,9 @@ p.write_text(''.join(lines))
 }
 SHELLEOF
 
-sed -i '' "s|__INSTALL_DIR__|$INSTALL_DIR|g; s|__SHELL_RC__|$SHELL_RC|g" "$INSTALL_DIR/shell.sh"
+# -i.bak works on both BSD (macOS) and GNU sed; '' alone breaks on Linux.
+sed -i.bak "s|__INSTALL_DIR__|$INSTALL_DIR|g; s|__SHELL_RC__|$SHELL_RC|g" "$INSTALL_DIR/shell.sh"
+rm -f "$INSTALL_DIR/shell.sh.bak"
 
 # Add source line to rc once — idempotent on updates since the line is identical.
 python3 -c "
