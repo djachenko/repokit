@@ -10,11 +10,13 @@ LATEST_URL=$(curl -fsSLI -o /dev/null -w '%{url_effective}' "https://github.com/
     echo "✗ Failed to reach GitHub" >&2
     exit 1
   }
+
 VERSION=$(printf '%s' "$LATEST_URL" | sed 's|.*/||')
 [[ -n "$VERSION" ]] || {
   echo "✗ Could not detect latest version" >&2
   exit 1
 }
+
 TARBALL_URL="https://github.com/$REPO/archive/refs/tags/$VERSION.tar.gz"
 INSTALL_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/repokit"
 
@@ -42,11 +44,13 @@ echo "Installing to $INSTALL_DIR..."
 BAK="$INSTALL_DIR.bak"
 rm -rf "$BAK"
 [[ -d "$INSTALL_DIR" ]] && mv "$INSTALL_DIR" "$BAK"
+
 mv "$TMP"/repokit-"$VERSION" "$INSTALL_DIR" || {
   echo "✗ Install failed" >&2
   [[ -d "$BAK" ]] && mv "$BAK" "$INSTALL_DIR"
   exit 1
 }
+
 rm -rf "$BAK"
 
 # install.sh is a bootstrap — it has no purpose inside the installed tree.
