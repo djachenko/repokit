@@ -2,6 +2,14 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.10.7 - 2026-07-20
+#### Bug Fixes
+- pre-push hook fails open on new branch push - (5e46f7a) - Igor Djachenko
+#### Miscellaneous Chores
+- remove Status section from public CLAUDE.md - (3c86e4e) - Igor Djachenko
+
+- - -
+
 ## 0.10.6 - 2026-07-17
 #### Bug Fixes
 - scaffold src/ on first setup, note TestPyPI order in instructions - (2bbc706) - Igor Djachenko
