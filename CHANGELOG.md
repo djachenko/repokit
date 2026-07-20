@@ -2,6 +2,16 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.10.8 - 2026-07-20
+#### Bug Fixes
+- shellcheck SC2086 and SC2206 - (5f6fe78) - Igor Djachenko
+- private by default, visibility choice, empty initial commit, scan-based .gitignore - (1c545b4) - Igor Djachenko
+#### Miscellaneous Chores
+- remove memory from .gitignore - (5024e5e) - Igor Djachenko
+- add _claude to .gitignore, remove duplicate _worktrees entry - (a046ea3) - Igor Djachenko
+
+- - -
+
 ## 0.10.7 - 2026-07-20
 #### Bug Fixes
 - pre-push hook fails open on new branch push - (5e46f7a) - Igor Djachenko
