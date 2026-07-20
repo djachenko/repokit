@@ -179,6 +179,23 @@ ask_yn() {
 }
 export -f ask_yn
 
+# Prompt the user to choose repo visibility; prints "public", "private", or ""
+# (empty = cancel). All prompts go to stderr so stdout is capture-safe.
+ask_visibility() {
+  echo "Visibility for '$OWNER/$REPO':" >&2
+  echo "  r) private  (recommended)" >&2
+  echo "  u) public" >&2
+  echo -n "  Choice [r/u/N to cancel]: " >&2
+  read -rn 1 choice
+  echo >&2
+  case "$choice" in
+    r|R) echo "private" ;;
+    u|U) echo "public" ;;
+    *)   ;;
+  esac
+}
+export -f ask_visibility
+
 run_step() {
   local step="$1"
   local override="$SCRIPT_DIR/languages/$LANGUAGE/$step"
@@ -251,7 +268,38 @@ fi
 # ── Create GitHub repo + initial push (if needed) ────────────────────────────
 
 if [[ "$HAS_REMOTE" == false ]]; then
-  ask_yn "Create GitHub repo '$OWNER/$REPO'?" || exit 0
+  # Scan for known sensitive file patterns and protect them in .gitignore
+  # before any content reaches GitHub. Only adds patterns that actually match
+  # something in the current directory (no noise for absent patterns).
+  shopt -s nullglob
+  sensitive_patterns=(".env" ".env.*" "*.pem" "*.key" "*.p8" "*.p12" "*.pfx" "secrets.*" "credentials.*" "*.secret")
+  to_ignore=()
+  for pattern in "${sensitive_patterns[@]}"; do
+    # shellcheck disable=SC2206  # glob expansion under nullglob is intentional
+    matches=($pattern)
+    # matches[@] expands to the list of files; -gt 0 = at least one file found.
+    if [[ ${#matches[@]} -gt 0 ]]; then
+      # -qxF: quiet, whole-line, literal string — avoids false positives from
+      # substring matches (e.g. "key" matching inside "monkey.txt").
+      if ! grep -qxF "$pattern" .gitignore 2>/dev/null; then
+        to_ignore+=("$pattern")
+      fi
+    fi
+  done
+  shopt -u nullglob
+
+  if [[ ${#to_ignore[@]} -gt 0 ]]; then
+    echo "→ Sensitive files found, adding to .gitignore: ${to_ignore[*]}"
+    for pattern in "${to_ignore[@]}"; do
+      echo "$pattern" >> .gitignore
+    done
+  fi
+
+  VISIBILITY=$(ask_visibility)
+  # Empty string means the user cancelled.
+  [[ -z "$VISIBILITY" ]] && exit 0
+  export VISIBILITY
+
   run_step 03_create_repo.sh
 
   # If the repo already has commits (user committed manually before running
@@ -273,6 +321,15 @@ fi
 run_step 05_branch_prepare.sh
 
 # ── Write .repokit marker + update .gitignore ────────────────────────────────
+
+# If sensitive patterns were found during scan, commit them first as their own
+# concern — separate from the .repokit bookkeeping commit below.
+if [[ ${#to_ignore[@]} -gt 0 ]]; then
+  git add .gitignore
+  if ! git diff --cached --quiet; then
+    repokit_commit "add sensitive patterns to .gitignore"
+  fi
+fi
 
 # Write current run's settings to .repokit so re-runs and subshells can read them.
 # printf 'format' args = like Python's format string; %s = string, \n = newline.

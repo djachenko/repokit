@@ -4,9 +4,7 @@ set -e
 
 echo "→ Creating repository $OWNER/$REPO..."
 
-# Create as public by default. GitHub does not allow changing visibility through
-# the ruleset API on free plans, so we keep things simple here.
-run_quiet gh repo create "$OWNER/$REPO" --public
+run_quiet gh repo create "$OWNER/$REPO" --"$VISIBILITY"
 
 # Enable auto-merge so that a PR with all checks green can be merged automatically
 # without a second click — useful once branch protection is in place.
