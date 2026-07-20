@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.10.9 - 2026-07-20
+#### Bug Fixes
+- make install.sh atomic and error-safe - (4326e13) - Igor Djachenko
+
+- - -
+
 ## 0.10.8 - 2026-07-20
 #### Bug Fixes
 - shellcheck SC2086 and SC2206 - (5f6fe78) - Igor Djachenko
