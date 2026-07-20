@@ -1,12 +1,5 @@
 # repokit — Project Guide
 
-## Status
-
-- **Последнее** — feat: add dotfiles language + run_step override mechanism
-- **Следующее** — протестировать dotfiles язык на реальном репо
-- **Блокеры** — —
-- **Состояние** — активная разработка
-
 ## Цель
 
 Bash-скрипт для бутстрапа новых GitHub-репозиториев. Создаёт репо, инициализирует git, пишет CI workflow-файлы, `pyproject.toml`, применяет ruleset.
