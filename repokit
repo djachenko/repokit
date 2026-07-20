@@ -228,6 +228,11 @@ if [[ "$HAS_GIT" == false ]]; then
   run_step 02_git_init.sh
 fi
 
+# Install pre-push hook into this repo's local .git/hooks/ on every run so it
+# stays up to date when repokit is upgraded. Local install = no global side effects.
+cp "$SCRIPT_DIR/hooks/pre-push" ".git/hooks/pre-push"
+chmod +x ".git/hooks/pre-push"
+
 # Switch the remote from HTTPS to SSH if needed.
 # gh repo create adds an HTTPS remote; SSH is preferred because it doesn't
 # prompt for credentials on every push/pull.

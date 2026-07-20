@@ -82,7 +82,6 @@ lines = p.read_text().splitlines(keepends=True)
 lines = [l for l in lines if 'repokit/shell.sh' not in l]
 p.write_text(''.join(lines))
 " 2>/dev/null || true
-  git config --global --unset core.hooksPath 2>/dev/null || true
   echo "repokit uninstalled. Restart your shell."
 }
 SHELLEOF
@@ -100,10 +99,6 @@ if line.strip() not in t:
 " 2> /dev/null || true
 
 echo "Added repokit to $SHELL_RC. Restart shell or: source $SHELL_RC"
-
-# Install git hooks globally so pre-push checks run in every repo on this machine.
-git config --global core.hooksPath "$INSTALL_DIR/hooks"
-echo "Git hooks configured globally"
 
 if [[ -n "$CURRENT" ]]; then
   echo "Updated: repokit $CURRENT → $VERSION"
