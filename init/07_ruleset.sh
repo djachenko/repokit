@@ -36,28 +36,46 @@ parse_jobs() {
 # Prints the job id that no other job in the file depends on (the last in the chain).
 # GitHub reports the check context as "<caller> / <terminal>", so required_status_checks
 # must use the terminal job name, not an intermediate one.
+#
+# Handles all three YAML forms of `needs:`:
+#   needs: job1            (single value)
+#   needs: [job1, job2]    (inline array)
+#   needs:                 (multiline list)
+#     - job1
 resolve_terminal_job() {
   local file="$1"
-  awk '
-    /^jobs:/ { in_jobs=1; next }
-    in_jobs && /^  [A-Za-z0-9_-]+:$/ {
-      job=$0; sub(/^  /, "", job); sub(/:$/, "", job)
-      jobs[job]=1
-      next
-    }
-    in_jobs && /^    needs:/ {
-      n=$0; sub(/^    needs: */, "", n)
-      gsub(/[\[\]]/, "", n)          # strip [ ] from needs: [a, b] form
-      split(n, arr, ",")
-      for (i in arr) {
-        gsub(/^ +| +$/, "", arr[i]) # trim spaces around each name
-        if (arr[i] != "") needed[arr[i]]=1
-      }
-    }
-    END {
-      for (j in jobs) if (!(j in needed)) print j
-    }
-  ' "$file"
+  python3 - "$file" << 'PYEOF'
+import sys, re
+
+jobs, needed, in_jobs, in_needs = [], set(), False, False
+for line in open(sys.argv[1]):
+    if line == 'jobs:\n':
+        in_jobs = True
+        continue
+    if in_jobs and re.match(r'^[A-Za-z]', line):
+        in_jobs = False  # new top-level key ends jobs section
+        continue
+    if not in_jobs:
+        continue
+    if re.match(r'^  [A-Za-z0-9_-]+:\s*$', line):
+        jobs.append(re.match(r'^  ([A-Za-z0-9_-]+):', line).group(1))
+        in_needs = False
+    elif re.match(r'^    needs:\s*$', line):
+        in_needs = True
+    elif re.match(r'^    needs:\s+', line):
+        # inline value or array: needs: job1  /  needs: [a, b]
+        val = line.split('needs:', 1)[1].strip().strip('[]')
+        needed.update(n.strip() for n in val.split(',') if n.strip())
+        in_needs = False
+    elif in_needs and re.match(r'^      - ', line):
+        needed.add(line.split('- ', 1)[1].strip())
+    elif not re.match(r'^      ', line):
+        in_needs = False
+
+terminal = next((j for j in jobs if j not in needed), None)
+if terminal:
+    print(terminal)
+PYEOF
 }
 
 # ── Collect required check contexts ──────────────────────────────────────────
