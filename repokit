@@ -248,6 +248,10 @@ fi
 # Switch the remote from HTTPS to SSH if needed.
 # gh repo create adds an HTTPS remote; SSH is preferred because it doesn't
 # prompt for credentials on every push/pull.
+#
+# Also handles the partial-failure case: if a previous run created the GitHub
+# repo but died before `git remote add origin`, repokit sees HAS_REMOTE=true
+# but there's no local origin — we re-add it here so fetch/push don't fail.
 if [[ "$HAS_GIT" == true ]]; then
   # Get the URL of the "origin" remote, ignoring errors if there is none.
   # 2>/dev/null = discard stderr only (stdout still flows normally).
@@ -255,7 +259,12 @@ if [[ "$HAS_GIT" == true ]]; then
   # (set -e would otherwise exit here because there's no "origin" remote).
   remote_url=$(git remote get-url origin 2>/dev/null || true)
 
-  if [[ "$remote_url" == https://github.com/* ]]; then
+  if [[ -z "$remote_url" && "$HAS_REMOTE" == true ]]; then
+    # GitHub repo exists but no local origin — previous run interrupted between
+    # `gh repo create` and `git remote add`. Re-add to unblock this run.
+    echo "→ Adding missing origin remote (previous run interrupted)..."
+    run_quiet git remote add origin "git@github.com:$OWNER/$REPO.git"
+  elif [[ "$remote_url" == https://github.com/* ]]; then
     # Build the SSH equivalent by stripping the HTTPS prefix.
     # ${var#prefix} removes the shortest matching prefix from the value.
     # "https://github.com/owner/repo.git" → "owner/repo.git"
