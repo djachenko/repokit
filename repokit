@@ -343,7 +343,12 @@ fi
 # Write current run's settings to .repokit so re-runs and subshells can read them.
 # printf 'format' args = like Python's format string; %s = string, \n = newline.
 # > = overwrite the file (>> would append).
-printf 'language=%s\nbase_branch=%s\n' "$LANGUAGE" "$BASE_BRANCH" > .repokit
+# Preserve extra fields added by language scripts (e.g. template_hash) — only
+# overwrite the two fields repokit itself manages.
+{
+  printf 'language=%s\nbase_branch=%s\n' "$LANGUAGE" "$BASE_BRANCH"
+  grep -vE '^(language|base_branch)=' .repokit 2>/dev/null || true
+} > .repokit.tmp && mv .repokit.tmp .repokit
 
 # Add .repokit to .gitignore if it isn't already listed there.
 # grep -qxF: -q = silent (exit code only); -x = whole-line match (not substring);

@@ -61,17 +61,70 @@ fi
 
 # ── pyproject.toml ────────────────────────────────────────────────────────────
 #
-# Skip if the user has modified the file (they added classifiers, dependencies,
-# etc.) unless --force-pyproject was passed.  We compare against the rendered
-# template, not the source, so a re-run with the same REPO/OWNER is a no-op.
+# Hash the rendered template to detect changes across runs.
+# We compare template-to-template (not template-to-file) so user edits don't
+# trigger unnecessary merges — only actual template updates do.
 
-if [[ -f "pyproject.toml" && "${REPOKIT_FORCE:-false}" == false ]]; then
-  if [[ "$new_content" != "$(cat pyproject.toml)" ]]; then
-    echo "→ Writing pyproject.toml... skip (modified by user — use --force-pyproject to overwrite)"
-  fi
-else
+new_hash=$(printf '%s' "$new_content" | openssl dgst -sha256 | awk '{print $2}')
+
+# Update a single key in .repokit without touching other fields.
+repokit_set_field() {
+  local key="$1" val="$2" tmp
+  tmp=$(mktemp)
+  grep -v "^${key}=" .repokit 2> /dev/null > "$tmp" || true
+  printf '%s=%s\n' "$key" "$val" >> "$tmp"
+  mv "$tmp" .repokit
+}
+
+if [[ "${REPOKIT_FORCE:-false}" == true ]]; then
+  # --force-pyproject: overwrite entirely, no merge
+  echo "→ Writing pyproject.toml (forced)..."
+  printf '%s\n' "$new_content" > pyproject.toml
+  git add pyproject.toml
+  repokit_commit "update pyproject.toml"
+  repokit_set_field "template_hash" "$new_hash"
+
+elif [[ ! -f "pyproject.toml" ]]; then
+  # First run: file doesn't exist yet, write template directly
   echo "→ Writing pyproject.toml..."
-  echo "$new_content" > pyproject.toml
+  printf '%s\n' "$new_content" > pyproject.toml
   git add pyproject.toml
   repokit_commit "add pyproject.toml"
+  repokit_set_field "template_hash" "$new_hash"
+
+else
+  stored_hash=$(grep '^template_hash=' .repokit 2> /dev/null | cut -d= -f2 || true)
+
+  if [[ "$new_hash" == "$stored_hash" ]]; then
+    echo "→ pyproject.toml is up to date, skipping"
+  else
+    # Template changed — merge managed keys into user's file.
+    MERGE_BIN="$SCRIPT_DIR/bin/merge_pyproject"
+
+    if [[ ! -x "$MERGE_BIN" ]]; then
+      if ! command -v go &> /dev/null; then
+        echo "⚠ pyproject.toml template changed but 'go' not found — skipping merge"
+      else
+        echo "→ Building merge tool..."
+        mkdir -p "$SCRIPT_DIR/bin"
+        (cd "$SCRIPT_DIR/scripts/merge_pyproject" && go build -o "$MERGE_BIN" .)
+      fi
+    fi
+
+    if [[ -x "$MERGE_BIN" ]]; then
+      tmpl_tmp=$(mktemp)
+      # Always clean up temp file, even if merge fails or script is interrupted.
+      trap 'rm -f "$tmpl_tmp"' EXIT
+      printf '%s\n' "$new_content" > "$tmpl_tmp"
+
+      echo "→ Merging pyproject.toml..."
+      if "$MERGE_BIN" "$tmpl_tmp" pyproject.toml; then
+        git add pyproject.toml
+        repokit_commit "update pyproject.toml"
+        repokit_set_field "template_hash" "$new_hash"
+      else
+        echo "✗ merge failed — pyproject.toml not updated"
+      fi
+    fi
+  fi
 fi
