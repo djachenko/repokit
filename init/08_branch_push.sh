@@ -26,5 +26,3 @@ else
   echo ""
   echo "✓ Already up to date"
 fi
-
-sed -i '' '/^base_branch=/d' .repokit
