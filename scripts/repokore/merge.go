@@ -16,18 +16,24 @@ var (
 	interactive = true
 )
 
-func main() {
-	nonInteractive := flag.Bool("non-interactive", false, "keep current value on all conflicts")
-	flag.Parse()
+// mergePyproject merges repokit's pyproject.toml template into the repo's own
+// file, keeping user-only keys and asking before overwriting a differing value.
+func mergePyproject(args []string) {
+	fs := flag.NewFlagSet("merge-pyproject", flag.ExitOnError)
+	nonInteractive := fs.Bool("non-interactive", false, "keep current value on all conflicts")
 
-	if flag.NArg() != 2 {
-		fmt.Fprintln(os.Stderr, "usage: merge_pyproject [--non-interactive] <template> <target>")
+	if err := fs.Parse(args); err != nil {
+		os.Exit(1)
+	}
+
+	if fs.NArg() != 2 {
+		fmt.Fprintln(os.Stderr, "usage: repokore merge-pyproject [--non-interactive] <template> <target>")
 
 		os.Exit(1)
 	}
 
 	interactive = !*nonInteractive
-	tmplPath, targetPath := flag.Arg(0), flag.Arg(1)
+	tmplPath, targetPath := fs.Arg(0), fs.Arg(1)
 
 	tmpl, err := toml.LoadFile(tmplPath)
 	if err != nil {

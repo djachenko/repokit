@@ -99,21 +99,21 @@ else
     echo "→ pyproject.toml is up to date, skipping"
   else
     # Template changed — merge managed keys into user's file.
-    MERGE_BIN="$SCRIPT_DIR/bin/merge_pyproject"
+    REPOKORE="$SCRIPT_DIR/bin/repokore"
 
-    if [[ ! -x "$MERGE_BIN" ]]; then
-      echo "⚠ pyproject.toml template changed but merge tool not found — skipping merge"
+    if [[ ! -x "$REPOKORE" ]]; then
+      echo "⚠ pyproject.toml template changed but repokore not found — skipping merge"
       echo "  Reinstall repokit: curl -fsSL https://raw.githubusercontent.com/djachenko/repokit/master/install.sh | bash"
     fi
 
-    if [[ -x "$MERGE_BIN" ]]; then
+    if [[ -x "$REPOKORE" ]]; then
       tmpl_tmp=$(mktemp)
       # Always clean up temp file, even if merge fails or script is interrupted.
       trap 'rm -f "$tmpl_tmp"' EXIT
       printf '%s\n' "$new_content" > "$tmpl_tmp"
 
       echo "→ Merging pyproject.toml..."
-      if "$MERGE_BIN" "$tmpl_tmp" pyproject.toml; then
+      if "$REPOKORE" merge-pyproject "$tmpl_tmp" pyproject.toml; then
         git add pyproject.toml
         repokit_commit "update pyproject.toml"
         repokit_set_field "template_hash" "$new_hash"

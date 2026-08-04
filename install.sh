@@ -27,7 +27,7 @@ OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 ARCH=$(uname -m)
 [[ "$ARCH" == "x86_64" ]] && ARCH="amd64"
 [[ "$ARCH" == "aarch64" ]] && ARCH="arm64"
-BIN_URL="https://github.com/$REPO/releases/download/$VERSION/merge_pyproject-${OS}-${ARCH}"
+BIN_URL="https://github.com/$REPO/releases/download/$VERSION/repokore-${OS}-${ARCH}"
 
 # Read the currently installed version (if any) to detect upgrade vs. fresh install.
 CURRENT=$(cat "$INSTALL_DIR/VERSION" 2> /dev/null || true)
@@ -72,12 +72,12 @@ echo "$VERSION" > "$INSTALL_DIR/VERSION"
 chmod +x "$INSTALL_DIR/repokit" "$INSTALL_DIR"/init/*.sh "$INSTALL_DIR"/hooks/*
 
 # Download the prebuilt binary for this platform.
-echo "Downloading repokit-tool..."
+echo "Downloading repokore..."
 mkdir -p "$INSTALL_DIR/bin"
-if curl -fsSL "$BIN_URL" -o "$INSTALL_DIR/bin/merge_pyproject" 2> /dev/null; then
-  chmod +x "$INSTALL_DIR/bin/merge_pyproject"
+if curl -fsSL "$BIN_URL" -o "$INSTALL_DIR/bin/repokore" 2> /dev/null; then
+  chmod +x "$INSTALL_DIR/bin/repokore"
 else
-  echo "⚠ Could not download repokit-tool for ${OS}/${ARCH} — smart-merge of pyproject.toml will be unavailable"
+  echo "⚠ Could not download repokore for ${OS}/${ARCH} — smart-merge of pyproject.toml will be unavailable"
 fi
 
 # ── Shell integration ─────────────────────────────────────────────────────────

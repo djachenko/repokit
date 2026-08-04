@@ -1,4 +1,4 @@
-module github.com/djachenko/repokit/merge_pyproject
+module github.com/djachenko/repokit/repokore
 
 go 1.21
 

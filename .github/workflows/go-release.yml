@@ -12,18 +12,22 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version-file: scripts/merge_pyproject/go.mod
-          cache-dependency-path: scripts/merge_pyproject/go.sum
+          go-version-file: scripts/repokore/go.mod
+          cache-dependency-path: scripts/repokore/go.sum
+
+      - name: Test
+        working-directory: scripts/repokore
+        run: go test ./...
 
       - name: Build binaries
-        working-directory: scripts/merge_pyproject
+        working-directory: scripts/repokore
         run: |
           mkdir -p ../../bin
           for goos in darwin linux; do
             for goarch in amd64 arm64; do
               GOOS=$goos GOARCH=$goarch go build \
                 -ldflags="-s -w" \
-                -o "../../bin/merge_pyproject-${goos}-${goarch}" \
+                -o "../../bin/repokore-${goos}-${goarch}" \
                 .
             done
           done
