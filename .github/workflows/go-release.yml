@@ -1,0 +1,41 @@
+name: Go Release
+
+# Runs when bash-release.yml publishes a GitHub release.
+# Cross-compiles the Go binary and uploads platform assets to the same release.
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: scripts/merge_pyproject/go.mod
+          cache-dependency-path: scripts/merge_pyproject/go.sum
+
+      - name: Build binaries
+        working-directory: scripts/merge_pyproject
+        run: |
+          mkdir -p ../../bin
+          for goos in darwin linux; do
+            for goarch in amd64 arm64; do
+              GOOS=$goos GOARCH=$goarch go build \
+                -ldflags="-s -w" \
+                -o "../../bin/merge_pyproject-${goos}-${goarch}" \
+                .
+            done
+          done
+
+      - name: Upload binaries
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name }}" bin/merge_pyproject-*
