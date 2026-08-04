@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"os"
 	"strings"
 	"testing"
@@ -162,15 +163,9 @@ license = "MIT"
 
 // ── merge: key order ──────────────────────────────────────────────────────────
 
-func indexOf(keys []string, key string) int {
-	for i, k := range keys {
-		if k == key {
-			return i
-		}
-	}
-	return -1
-}
-
+// Order is asserted on the serialised output, not on Keys(): the tree stores
+// values in a map, so Keys() returns them in Go's randomised map order and says
+// nothing about what lands in the file.
 func TestMerge_UserKeyOrder_Preserved(t *testing.T) {
 	base := load(t, `
 name = "myproject"
@@ -184,7 +179,30 @@ version = "1.0.0"
 
 	merge(base, tmpl, "")
 
-	keys := base.Keys()
-	assert.Less(t, indexOf(keys, "name"), indexOf(keys, "dependencies"))
-	assert.Less(t, indexOf(keys, "dependencies"), indexOf(keys, "version"))
+	var buf bytes.Buffer
+	require.NoError(t, writeTOML(&buf, base))
+	out := buf.String()
+
+	assert.Less(t, strings.Index(out, "name"), strings.Index(out, "dependencies"))
+	assert.Less(t, strings.Index(out, "dependencies"), strings.Index(out, "version"))
+}
+
+// A key only the template has is appended after the user's own keys.
+func TestMerge_TemplateOnlyKey_AppendedLast(t *testing.T) {
+	base := load(t, `
+name = "myproject"
+dependencies = ["requests"]
+`)
+	tmpl := load(t, `
+name = "myproject"
+license = "MIT"
+`)
+
+	merge(base, tmpl, "")
+
+	var buf bytes.Buffer
+	require.NoError(t, writeTOML(&buf, base))
+	out := buf.String()
+
+	assert.Less(t, strings.Index(out, "dependencies"), strings.Index(out, "license"))
 }

@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"reflect"
 	"strings"
@@ -56,10 +57,18 @@ func mergePyproject(args []string) {
 	}
 	defer f.Close()
 
-	if err := toml.NewEncoder(f).Encode(target); err != nil {
+	if err := writeTOML(f, target); err != nil {
 		fmt.Fprintf(os.Stderr, "error writing TOML: %v\n", err)
 		os.Exit(1)
 	}
+}
+
+// writeTOML serialises tree keeping the key order of the original file.
+// Without OrderPreserve the encoder sorts alphabetically, which would rewrite
+// the user's whole pyproject.toml on every merge. Keys the merge added have no
+// source position and land at the end of their section.
+func writeTOML(w io.Writer, tree *toml.Tree) error {
+	return toml.NewEncoder(w).Order(toml.OrderPreserve).Encode(tree)
 }
 
 // merge updates base in-place from tmpl:
