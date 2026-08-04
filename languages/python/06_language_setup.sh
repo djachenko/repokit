@@ -99,7 +99,8 @@ else
     echo "→ pyproject.toml is up to date, skipping"
   else
     # Template changed — merge managed keys into user's file.
-    REPOKORE="$SCRIPT_DIR/bin/repokore"
+    # Overridable so tests can point at a stub instead of the real binary.
+    REPOKORE="${REPOKORE:-$SCRIPT_DIR/bin/repokore}"
 
     if [[ ! -x "$REPOKORE" ]]; then
       echo "⚠ pyproject.toml template changed but repokore not found — skipping merge"
