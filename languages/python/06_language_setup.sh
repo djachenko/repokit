@@ -102,13 +102,8 @@ else
     MERGE_BIN="$SCRIPT_DIR/bin/merge_pyproject"
 
     if [[ ! -x "$MERGE_BIN" ]]; then
-      if ! command -v go &> /dev/null; then
-        echo "⚠ pyproject.toml template changed but 'go' not found — skipping merge"
-      else
-        echo "→ Building merge tool..."
-        mkdir -p "$SCRIPT_DIR/bin"
-        (cd "$SCRIPT_DIR/scripts/merge_pyproject" && go build -o "$MERGE_BIN" .)
-      fi
+      echo "⚠ pyproject.toml template changed but merge tool not found — skipping merge"
+      echo "  Reinstall repokit: curl -fsSL https://raw.githubusercontent.com/djachenko/repokit/master/install.sh | bash"
     fi
 
     if [[ -x "$MERGE_BIN" ]]; then

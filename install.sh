@@ -18,6 +18,13 @@ VERSION=$(printf '%s' "$LATEST_URL" | sed 's|.*/||')
 TARBALL_URL="https://github.com/$REPO/archive/refs/tags/$VERSION.tar.gz"
 INSTALL_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/repokit"
 
+# Detect OS and CPU arch for the prebuilt binary asset.
+# uname -s → Darwin/Linux; uname -m → x86_64/arm64.
+OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+ARCH=$(uname -m)
+[[ "$ARCH" == "x86_64" ]] && ARCH="amd64"
+BIN_URL="https://github.com/$REPO/releases/download/$VERSION/merge_pyproject-${OS}-${ARCH}"
+
 # Read the currently installed version (if any) to detect upgrade vs. fresh install.
 CURRENT=$(cat "$INSTALL_DIR/VERSION" 2> /dev/null || true)
 if [[ "$CURRENT" == "$VERSION" ]]; then
@@ -60,6 +67,15 @@ echo "$VERSION" > "$INSTALL_DIR/VERSION"
 # Language setup scripts are called with `bash <script>` so they don't need +x.
 chmod +x "$INSTALL_DIR/repokit" "$INSTALL_DIR"/init/*.sh "$INSTALL_DIR"/hooks/*
 
+# Download the prebuilt binary for this platform.
+echo "Downloading repokit-tool..."
+mkdir -p "$INSTALL_DIR/bin"
+if curl -fsSL "$BIN_URL" -o "$INSTALL_DIR/bin/merge_pyproject" 2> /dev/null; then
+  chmod +x "$INSTALL_DIR/bin/merge_pyproject"
+else
+  echo "⚠ Could not download repokit-tool for ${OS}/${ARCH} — smart-merge of pyproject.toml will be unavailable"
+fi
+
 # ── Shell integration ─────────────────────────────────────────────────────────
 #
 # Old approach wrote a BEGIN/END block directly into .zshrc on every install,
@@ -81,45 +97,28 @@ repokit-update() {
 }
 repokit-uninstall() {
   rm -rf "__INSTALL_DIR__"
-  python3 -c "
-import pathlib
-p = pathlib.Path('__SHELL_RC__')
-lines = p.read_text().splitlines(keepends=True)
-lines = [l for l in lines if 'repokit/shell.sh' not in l]
-p.write_text(''.join(lines))
-" 2>/dev/null || true
+  # sed -i.bak works on both macOS (BSD sed) and Linux (GNU sed)
+  sed -i.bak '/repokit\/shell\.sh/d' "__SHELL_RC__" 2>/dev/null && rm -f "__SHELL_RC__.bak" || true
   echo "repokit uninstalled. Restart your shell."
 }
 SHELLEOF
 
 sed -i '' "s|__INSTALL_DIR__|$INSTALL_DIR|g; s|__SHELL_RC__|$SHELL_RC|g" "$INSTALL_DIR/shell.sh"
 
-if command -v python3 &> /dev/null; then
-  # Migrate: remove old-style BEGIN/END block if present.
-  # Using Python because BSD sed (macOS) and GNU sed handle -i differently.
-  python3 -c "
-import re, pathlib
-p = pathlib.Path('$SHELL_RC')
-t = p.read_text()
-t = re.sub(r'\n?# BEGIN repokit\n.*?# END repokit\n?', '', t, flags=re.DOTALL)
-p.write_text(t)
-" 2> /dev/null || true
-
-  # Add source line to rc once — idempotent on updates since the line is identical.
-  python3 -c "
-import pathlib
-p = pathlib.Path('$SHELL_RC')
-t = p.read_text()
-line = '[ -f \"$INSTALL_DIR/shell.sh\" ] && source \"$INSTALL_DIR/shell.sh\"\n'
-if line.strip() not in t:
-    p.write_text(t.rstrip('\n') + '\n' + line)
-" 2> /dev/null || true
-
-  echo "Added repokit to $SHELL_RC. Restart shell or: source $SHELL_RC"
-else
-  echo "⚠ python3 not found — add to $SHELL_RC manually:"
-  echo "  [ -f \"$INSTALL_DIR/shell.sh\" ] && source \"$INSTALL_DIR/shell.sh\""
+# Migrate: remove old-style BEGIN/END block if present.
+# sed -i.bak works on both macOS (BSD sed) and Linux (GNU sed).
+if grep -q '# BEGIN repokit' "$SHELL_RC" 2> /dev/null; then
+  sed -i.bak '/# BEGIN repokit/,/# END repokit/d' "$SHELL_RC"
+  rm -f "${SHELL_RC}.bak"
 fi
+
+# Add source line to rc once — idempotent on updates since the line is identical.
+SOURCE_LINE="[ -f \"$INSTALL_DIR/shell.sh\" ] && source \"$INSTALL_DIR/shell.sh\""
+if ! grep -qF "$SOURCE_LINE" "$SHELL_RC" 2> /dev/null; then
+  printf '\n%s\n' "$SOURCE_LINE" >> "$SHELL_RC"
+fi
+echo "Added repokit to $SHELL_RC. Restart shell or: source $SHELL_RC"
+
 
 if [[ -n "$CURRENT" ]]; then
   echo "Updated: repokit $CURRENT → $VERSION"

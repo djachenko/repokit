@@ -50,7 +50,27 @@ jobs:
           git tag -f "$MINOR_TAG"
           git tag -f "${{ steps.version.outputs.major }}"
 
-      - name: Create GitHub release
+      - uses: actions/setup-go@v5
+        if: steps.version.outputs.version != ''
+        with:
+          go-version-file: scripts/merge_pyproject/go.mod
+          cache-dependency-path: scripts/merge_pyproject/go.sum
+
+      - name: Build Go binaries
+        if: steps.version.outputs.version != ''
+        working-directory: scripts/merge_pyproject
+        run: |
+          mkdir -p ../../bin
+          for goos in darwin linux; do
+            for goarch in amd64 arm64; do
+              GOOS=$goos GOARCH=$goarch go build \
+                -ldflags="-s -w" \
+                -o "../../bin/merge_pyproject-${goos}-${goarch}" \
+                .
+            done
+          done
+
+      - name: Publish release
         if: steps.version.outputs.version != ''
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
@@ -62,3 +82,4 @@ jobs:
           cog changelog "${{ steps.version.outputs.version }}" > /tmp/changelog.md
           gh release create "${{ steps.version.outputs.version }}" --title "${{ steps.version.outputs.version }}" --notes-file /tmp/changelog.md || \
             gh release edit "${{ steps.version.outputs.version }}" --notes-file /tmp/changelog.md
+          gh release upload "${{ steps.version.outputs.version }}" bin/merge_pyproject-*
