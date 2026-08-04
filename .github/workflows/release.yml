@@ -9,15 +9,19 @@ permissions:
   contents: write
 
 jobs:
-  release:
-    uses: djachenko/repokit/.github/workflows/bash-release.yml@master
-    secrets: inherit
-
+  # Build first: a broken binary must block the release, not follow it.
+  # Whether a version will be cut is only knowable by running the bump itself,
+  # so the build runs on every master push and is cheap enough to keep that way.
   build-go:
     uses: djachenko/repokit/.github/workflows/go-release.yml@master
 
+  release:
+    needs: build-go
+    uses: djachenko/repokit/.github/workflows/bash-release.yml@master
+    secrets: inherit
+
   upload-go:
-    needs: [release, build-go]
+    needs: [build-go, release]
     if: needs.release.outputs.released == 'true'
     runs-on: ubuntu-latest
     permissions:
