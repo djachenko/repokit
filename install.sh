@@ -10,7 +10,8 @@ LATEST_URL=$(curl -fsSLI -o /dev/null -w '%{url_effective}' "https://github.com/
     echo "✗ Failed to reach GitHub" >&2
     exit 1
   }
-VERSION=$(printf '%s' "$LATEST_URL" | sed 's|.*/||')
+# ##*/ strips everything up to the last slash — the tag is the final path segment.
+VERSION="${LATEST_URL##*/}"
 [[ -n "$VERSION" ]] || {
   echo "✗ Could not detect latest version" >&2
   exit 1
@@ -19,10 +20,13 @@ TARBALL_URL="https://github.com/$REPO/archive/refs/tags/$VERSION.tar.gz"
 INSTALL_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/repokit"
 
 # Detect OS and CPU arch for the prebuilt binary asset.
-# uname -s → Darwin/Linux; uname -m → x86_64/arm64.
+# uname -s → Darwin/Linux; uname -m reports the CPU under several names, so
+# normalise to Go's GOARCH spelling: Intel is x86_64 everywhere, ARM64 is
+# arm64 on macOS but aarch64 on Linux.
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 ARCH=$(uname -m)
 [[ "$ARCH" == "x86_64" ]] && ARCH="amd64"
+[[ "$ARCH" == "aarch64" ]] && ARCH="arm64"
 BIN_URL="https://github.com/$REPO/releases/download/$VERSION/merge_pyproject-${OS}-${ARCH}"
 
 # Read the currently installed version (if any) to detect upgrade vs. fresh install.
@@ -79,31 +83,30 @@ fi
 # ── Shell integration ─────────────────────────────────────────────────────────
 #
 # Old approach wrote a BEGIN/END block directly into .zshrc on every install,
-# which was fragile: the END marker appeared inside the block (in sed/python
-# patterns), so repeated installs corrupted the file.
+# which was fragile: the END marker appeared inside the block (in the editing
+# patterns themselves), so repeated installs corrupted the file.
 #
 # New approach: write integration to $INSTALL_DIR/shell.sh once, then add a
 # single `source` line to the rc. On update, shell.sh is overwritten in-place —
 # the rc line stays the same, no rc edits needed.
 
 # Write shell integration to its own file — never touch the rc again after this.
-# Placeholders __INSTALL_DIR__ and __SHELL_RC__ are substituted by sed below
-# because the heredoc uses single quotes ('SHELLEOF') to prevent premature
-# expansion of $variables inside the script body.
-cat > "$INSTALL_DIR/shell.sh" << 'SHELLEOF'
-export PATH="__INSTALL_DIR__:$PATH"
+# The heredoc delimiter is unquoted, so $INSTALL_DIR and $SHELL_RC expand while
+# writing; \$PATH is escaped to stay literal and be resolved at shell startup.
+cat > "$INSTALL_DIR/shell.sh" << SHELLEOF
+export PATH="$INSTALL_DIR:\$PATH"
 repokit-update() {
   curl -fsSL https://raw.githubusercontent.com/djachenko/repokit/master/install.sh | bash
 }
 repokit-uninstall() {
-  rm -rf "__INSTALL_DIR__"
-  # sed -i.bak works on both macOS (BSD sed) and Linux (GNU sed)
-  sed -i.bak '/repokit\/shell\.sh/d' "__SHELL_RC__" 2>/dev/null && rm -f "__SHELL_RC__.bak" || true
+  rm -rf "$INSTALL_DIR"
+  # grep -vF matches a fixed string, so nothing in the path needs escaping.
+  # || true keeps an empty result from aborting the function under set -e.
+  { grep -vF 'repokit/shell.sh' "$SHELL_RC" || true; } > "$SHELL_RC.tmp"
+  mv "$SHELL_RC.tmp" "$SHELL_RC"
   echo "repokit uninstalled. Restart your shell."
 }
 SHELLEOF
-
-sed -i '' "s|__INSTALL_DIR__|$INSTALL_DIR|g; s|__SHELL_RC__|$SHELL_RC|g" "$INSTALL_DIR/shell.sh"
 
 # Migrate: remove old-style BEGIN/END block if present.
 # sed -i.bak works on both macOS (BSD sed) and Linux (GNU sed).
