@@ -33,7 +33,7 @@ func mergePyproject(args []string) {
 		os.Exit(1)
 	}
 
-	interactive = !*nonInteractive
+	interactive = !*nonInteractive && stdinIsTTY()
 	tmplPath, targetPath := fs.Arg(0), fs.Arg(1)
 
 	tmpl, err := toml.LoadFile(tmplPath)
@@ -104,6 +104,15 @@ func merge(base, tmpl *toml.Tree, path string) {
 			base.Set(key, tmpl.Get(key))
 		}
 	}
+}
+
+// stdinIsTTY reports whether there is a human to answer a conflict prompt.
+// Under CI or a pipe stdin is not a character device, and prompting would block
+// forever waiting for input nobody can type.
+func stdinIsTTY() bool {
+	info, err := os.Stdin.Stat()
+
+	return err == nil && info.Mode()&os.ModeCharDevice != 0
 }
 
 // takeTemplate asks the user whether to take the template value.
