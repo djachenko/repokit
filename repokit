@@ -342,9 +342,11 @@ fi
 
 # Write current run's settings to .repokit so re-runs and subshells can read them.
 # printf 'format' args = like Python's format string; %s = string, \n = newline.
-# > = overwrite the file (>> would append).
-# Preserve extra fields added by language scripts (e.g. template_hash) — only
-# overwrite the two fields repokit itself manages.
+# Only the two fields repokit itself manages get rewritten; everything else is
+# carried over. Language scripts add template_hash, and app_id is set by hand
+# after the user creates their GitHub App so the ruleset step can put it in
+# bypass_actors — neither must be lost on a re-run.
+# Written through a temp file because the block reads .repokit while rewriting it.
 {
   printf 'language=%s\nbase_branch=%s\n' "$LANGUAGE" "$BASE_BRANCH"
   grep -vE '^(language|base_branch)=' .repokit 2>/dev/null || true
