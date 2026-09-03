@@ -131,7 +131,6 @@ if ! grep -qF "$SOURCE_LINE" "$SHELL_RC" 2> /dev/null; then
 fi
 echo "Added repokit to $SHELL_RC. Restart shell or: source $SHELL_RC"
 
-
 if [[ -n "$CURRENT" ]]; then
   echo "Updated: repokit $CURRENT → $VERSION"
 else
