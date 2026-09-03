@@ -4,7 +4,7 @@
 
 Bash-скрипт для бутстрапа новых GitHub-репозиториев. Создаёт репо, инициализирует git, пишет CI workflow-файлы, `pyproject.toml`, применяет ruleset.
 
-Не Python-проект — чистый bash + шаблоны.
+Bash + шаблоны + Go-бинарь `repokore` для логики, которую bash тянет плохо (разбор форматов, обработка данных). Python в проекте не осталось — решение по языку: [`_claude/backlog/26.07.29.decision-implementation-language`](_claude/backlog/26.07.29.decision-implementation-language.md).
 
 ---
 
@@ -23,6 +23,10 @@ repokit/
 │   ├── 06_workflows.sh            # копирует wrapper workflows с подстановкой
 │   ├── 07_ruleset.sh              # gh api ruleset (required checks, merge-only)
 │   └── 08_branch_push.sh          # пушит ветку, открывает PR
+├── scripts/
+│   └── repokore/                  # Go: одна задача = один файл + строка в switch main.go
+│       ├── main.go                # диспетчер сабкоманд
+│       └── merge.go               # merge-pyproject: рекурсивный merge TOML
 └── languages/
     ├── python/
     │   ├── 06_language_setup.sh   # pyproject.toml + Claude skill
@@ -49,7 +53,12 @@ Reusable workflows (не попадают в клиентские репо):
 .github/workflows/
 ├── python-tests.yml
 ├── python-integration.yml
-└── python-release.yml
+├── python-release.yml
+├── bash-tests.yml                 # собственный CI repokit: shellcheck + shfmt
+├── bash-integration.yml           # заглушка, пока только checkout
+├── bash-release.yml               # PSR + тег + обновление floating tag в wrappers
+├── go-tests.yml                   # gofmt + vet + test для repokore
+└── go-release.yml                 # кросс-компиляция repokore в артефакт
 ```
 
 ---
@@ -90,6 +99,22 @@ Reusable workflows (не попадают в клиентские репо):
 **release.yml** (wrapper) — push в master → `python-release.yml`: PSR тегирует, сборка, PyPI. Использует GitHub App token (APP_CLIENT_ID + APP_PRIVATE_KEY) для push тега обходя branch protection.
 
 Версия определяется PSR по типам коммитов: `fix:` → patch, `feat:` → minor. Старт с `0.0.0`.
+
+### Собственный CI repokit
+
+Выше описано то, что уезжает в клиентские репо. У самого repokit схема своя:
+
+**tests.yml** — push на любую ветку → `bash-tests.yml` (shellcheck + shfmt) и `go-tests.yml` (gofmt + vet + test) двумя параллельными джобами. Go-тесты стоят здесь, а не только в релизе: иначе сломанный бинарь блокирует релиз уже после мержа, вместо того чтобы блокировать PR.
+
+**release.yml** — push в master, три джобы по порядку:
+
+1. `build-go` → `go-release.yml`: кросс-компиляция `darwin/{amd64,arm64}` + `linux/{amd64,arm64}`, выгрузка артефакта `go-binaries`
+2. `release` → `bash-release.yml`: PSR тегирует, отдаёт наружу `released` и `version`
+3. `upload-go`: скачивает артефакт и `gh release upload` — только при `released == 'true'`
+
+Сборка идёт **первой** осознанно: сломанный бинарь должен блокировать релиз, а не следовать за ним.
+
+`install.sh` качает готовый ассет `repokore-<os>-<arch>` — Go у пользователя не нужен.
 
 ---
 
