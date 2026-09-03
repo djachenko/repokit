@@ -245,6 +245,11 @@ if [[ "$HAS_GIT" == false ]]; then
   run_step 02_git_init.sh
 fi
 
+# Link the pre-push hook into this repo's local .git/hooks/. Symlink, not copy:
+# the hook then follows repokit upgrades without re-running repokit in every repo.
+# -s symlink, -f replace an existing hook. Local install = no global side effects.
+ln -sf "$SCRIPT_DIR/hooks/pre-push" ".git/hooks/pre-push"
+
 # Switch the remote from HTTPS to SSH if needed.
 # gh repo create adds an HTTPS remote; SSH is preferred because it doesn't
 # prompt for credentials on every push/pull.
