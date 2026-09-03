@@ -47,6 +47,16 @@ trap 'rm -rf "$TMP"' EXIT
 echo "Downloading repokit..."
 curl -fsSL "$TARBALL_URL" | tar xz -C "$TMP"
 
+# Fetch the binary while the existing install is still untouched — a missing
+# asset is then discovered before the point of no return, not after it.
+# curl leaves a partial file behind on failure, so drop it and let the presence
+# of $TMP/repokore be the single check further down.
+echo "Downloading repokore..."
+if ! curl -fsSL "$BIN_URL" -o "$TMP/repokore" 2> /dev/null; then
+  rm -f "$TMP/repokore"
+  echo "⚠ Could not download repokore for ${OS}/${ARCH} — smart-merge of pyproject.toml will be unavailable"
+fi
+
 echo "Installing to $INSTALL_DIR..."
 
 # Move old install dir aside so we can restore it if the new install fails.
@@ -71,13 +81,12 @@ echo "$VERSION" > "$INSTALL_DIR/VERSION"
 # Language setup scripts are called with `bash <script>` so they don't need +x.
 chmod +x "$INSTALL_DIR/repokit" "$INSTALL_DIR"/init/*.sh "$INSTALL_DIR"/hooks/*
 
-# Download the prebuilt binary for this platform.
-echo "Downloading repokore..."
-mkdir -p "$INSTALL_DIR/bin"
-if curl -fsSL "$BIN_URL" -o "$INSTALL_DIR/bin/repokore" 2> /dev/null; then
+# Put the binary downloaded above in place. Absent means the download failed and
+# already warned; the rest of repokit works, only smart-merge is unavailable.
+if [[ -f "$TMP/repokore" ]]; then
+  mkdir -p "$INSTALL_DIR/bin"
+  mv "$TMP/repokore" "$INSTALL_DIR/bin/repokore"
   chmod +x "$INSTALL_DIR/bin/repokore"
-else
-  echo "⚠ Could not download repokore for ${OS}/${ARCH} — smart-merge of pyproject.toml will be unavailable"
 fi
 
 # ── Shell integration ─────────────────────────────────────────────────────────
