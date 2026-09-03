@@ -11,3 +11,6 @@ jobs:
   tests:
     uses: djachenko/repokit/.github/workflows/bash-tests.yml@master
     secrets: inherit
+
+  go-tests:
+    uses: djachenko/repokit/.github/workflows/go-tests.yml@master
