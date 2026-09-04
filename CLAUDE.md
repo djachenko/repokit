@@ -4,7 +4,11 @@
 
 Bash-скрипт для бутстрапа новых GitHub-репозиториев. Создаёт репо, инициализирует git, пишет CI workflow-файлы, `pyproject.toml`, применяет ruleset.
 
-Bash + шаблоны + Go-бинарь `repokore` для логики, которую bash тянет плохо (разбор форматов, обработка данных). Python в проекте не осталось — решение по языку: [`_claude/backlog/26.07.29.decision-implementation-language`](_claude/backlog/26.07.29.decision-implementation-language.md).
+Bash + шаблоны + Go-бинарь `repokore` для логики, которую bash тянет плохо (разбор форматов, обработка данных). Решение по языку: [`_claude/backlog/26.07.29.decision-implementation-language`](_claude/backlog/26.07.29.decision-implementation-language.md).
+
+**Граница исполнения:** repokore — только локальная машина (установка, настройка репо, git-хуки, dotfiles). Всё, что крутится на CI-раннере, в него не переносится: установки repokit там нет. Поэтому `.github/actions/python-versions/get_versions.py` остаётся Python — единственный Python в проекте.
+
+Бинарь обязателен: `install.sh` падает, если не смог его скачать, `01_check_tools.sh` проверяет наличие.
 
 ---
 
@@ -23,10 +27,20 @@ repokit/
 │   ├── 06_workflows.sh            # копирует wrapper workflows с подстановкой
 │   ├── 07_ruleset.sh              # gh api ruleset (required checks, merge-only)
 │   └── 08_branch_push.sh          # пушит ветку, открывает PR
+├── hooks/
+│   └── pre-push                   # проверка author email, парсинг через repokore
 ├── scripts/
-│   └── repokore/                  # Go: одна задача = один файл + строка в switch main.go
-│       ├── main.go                # диспетчер сабкоманд
-│       └── merge.go               # merge-pyproject: рекурсивный merge TOML
+│   └── repokore/                  # Go: одна команда = строка в switch + пакет в internal/
+│       ├── main.go                # диспетчер сабкоманд, больше ничего
+│       └── internal/
+│           ├── commands/          # разбор флагов, по файлу на команду
+│           ├── config/            # формат .repokit (key=value)
+│           ├── template/          # {{REPO}}/{{OWNER}}/{{VERSION}} + sha256
+│           ├── pyproject/         # точечный merge TOML поверх lossless AST
+│           ├── workflow/          # разбор workflow YAML, терминальная джоба
+│           ├── gitignore/         # идемпотентный append + скан секретов
+│           ├── authors/           # pre-push протокол и git log
+│           └── changes/           # группировка git status по областям
 └── languages/
     ├── python/
     │   ├── 06_language_setup.sh   # pyproject.toml + Claude skill
@@ -79,11 +93,33 @@ Reusable workflows (не попадают в клиентские репо):
 
 ---
 
+## repokore
+
+Новая команда = строка в `switch` внутри `main.go` + пакет в `internal/`. Диспетчер без логики, логика без флагов.
+
+| Команда | Кто зовёт |
+|---------|-----------|
+| `merge-pyproject` | `06_language_setup.sh` |
+| `render-template` | `06_workflows.sh`, `06_language_setup.sh` |
+| `config get/set` | оркестратор, `05_branch_prepare.sh`, `07_ruleset.sh` |
+| `ruleset-checks` | `07_ruleset.sh` |
+| `gitignore add/sensitive` | оркестратор, `dotfiles/setup.sh` |
+| `check-authors ranges/filter` | `hooks/pre-push` |
+| `group-changes keys/paths/message` | `dotfiles/templates/commit` |
+
+Exit-код **3** у `merge-pyproject` = «шаблон не менялся», в отличие от `1` = ошибка.
+
+Тесты: `cd scripts/repokore && go test ./...`. Без `./...` ничего не найдёт — в корневом пакете только `main.go`.
+
+Merge правит текст поверх lossless AST, а не парсит в дерево и сериализует обратно. Тесты на него сравнивают **байты**, а не эквивалентность TOML: этот класс багов уже один раз проскочил мимо тестов на эквивалентность.
+
+---
+
 ## Шаблоны и подстановка
 
 Плейсхолдеры в wrapper workflows: `{{REPO}}`, `{{VERSION}}`.
 
-`{{VERSION}}` — major.minor repokit (например `0.9`), чтобы patch-обновления repokit не требовали пересоздания workflows в клиентских репо. При запуске из source (нет файла `VERSION`) подставляется `master`.
+`{{VERSION}}` — major.minor repokit (например `0.9`), чтобы patch-обновления repokit не требовали пересоздания workflows в клиентских репо. Сокращение делает `render-template`, ему передаётся полная версия. При запуске из source (нет файла `VERSION`) подставляется `master`.
 
 Шаблоны — настоящие YAML/TOML файлы, редактируются напрямую.
 
@@ -121,9 +157,8 @@ Reusable workflows (не попадают в клиентские репо):
 ## Ruleset
 
 `07_ruleset.sh` динамически вычисляет required status checks из wrapper workflows:
-- Парсит jobs в `tests.yml` и `integration.yml`
-- Для reusable workflow jobs раскрывает terminal job из reusable файла
-- Применяет ruleset через GitHub API (delete + create)
+- `repokore ruleset-checks` парсит jobs в `tests.yml` и `integration.yml`, для reusable-джоб раскрывает terminal job из вызываемого файла и отдаёт готовый JSON-массив. Неоднозначная terminal job — ошибка, а не выбор наугад
+- Скрипт применяет ruleset через GitHub API (delete + create)
 
 Правила: только merge (no squash, no rebase), required checks, no force-push.
 
