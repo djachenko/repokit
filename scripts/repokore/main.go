@@ -32,6 +32,8 @@ func main() {
 		commands.RenderTemplate(args)
 	case "config":
 		commands.Config(args)
+	case "ruleset-checks":
+		commands.RulesetChecks(args)
 	default:
 		fmt.Fprintf(os.Stderr, "unknown command: %s\n\n", os.Args[1])
 		usage()
@@ -46,5 +48,6 @@ func usage() {
 	fmt.Fprintln(os.Stderr, "  render-template --repo R [--owner O] [--version V] [--state F] [--out F] <template>")
 	fmt.Fprintln(os.Stderr, "  config get [--file F] <key>")
 	fmt.Fprintln(os.Stderr, "  config set [--file F] <key> <value>")
+	fmt.Fprintln(os.Stderr, "  ruleset-checks [--reusable DIR] <workflow.yml>...")
 	os.Exit(1)
 }
