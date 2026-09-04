@@ -34,6 +34,8 @@ func main() {
 		commands.Config(args)
 	case "ruleset-checks":
 		commands.RulesetChecks(args)
+	case "gitignore":
+		commands.Gitignore(args)
 	default:
 		fmt.Fprintf(os.Stderr, "unknown command: %s\n\n", os.Args[1])
 		usage()
@@ -49,5 +51,7 @@ func usage() {
 	fmt.Fprintln(os.Stderr, "  config get [--file F] <key>")
 	fmt.Fprintln(os.Stderr, "  config set [--file F] <key> <value>")
 	fmt.Fprintln(os.Stderr, "  ruleset-checks [--reusable DIR] <workflow.yml>...")
+	fmt.Fprintln(os.Stderr, "  gitignore add [--file F] <pattern>...")
+	fmt.Fprintln(os.Stderr, "  gitignore sensitive [--file F] [--dir D]")
 	os.Exit(1)
 }

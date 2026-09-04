@@ -285,31 +285,15 @@ fi
 # ── Create GitHub repo + initial push (if needed) ────────────────────────────
 
 if [[ "$HAS_REMOTE" == false ]]; then
-  # Scan for known sensitive file patterns and protect them in .gitignore
-  # before any content reaches GitHub. Only adds patterns that actually match
-  # something in the current directory (no noise for absent patterns).
-  shopt -s nullglob
-  sensitive_patterns=(".env" ".env.*" "*.pem" "*.key" "*.p8" "*.p12" "*.pfx" "secrets.*" "credentials.*" "*.secret")
-  to_ignore=()
-  for pattern in "${sensitive_patterns[@]}"; do
-    # shellcheck disable=SC2206  # glob expansion under nullglob is intentional
-    matches=($pattern)
-    # matches[@] expands to the list of files; -gt 0 = at least one file found.
-    if [[ ${#matches[@]} -gt 0 ]]; then
-      # -qxF: quiet, whole-line, literal string — avoids false positives from
-      # substring matches (e.g. "key" matching inside "monkey.txt").
-      if ! grep -qxF "$pattern" .gitignore 2> /dev/null; then
-        to_ignore+=("$pattern")
-      fi
-    fi
-  done
-  shopt -u nullglob
+  # Protect credential files in .gitignore before any content reaches GitHub.
+  # repokore scans for the known patterns, adds the ones that match something
+  # here, and prints what it added — nothing for a directory with no secrets in
+  # it, so the message and the commit below are skipped.
+  to_ignore=$("$REPOKORE" gitignore sensitive)
 
-  if [[ ${#to_ignore[@]} -gt 0 ]]; then
-    echo "→ Sensitive files found, adding to .gitignore: ${to_ignore[*]}"
-    for pattern in "${to_ignore[@]}"; do
-      echo "$pattern" >> .gitignore
-    done
+  if [[ -n "$to_ignore" ]]; then
+    # tr turns the one-per-line output into a single readable line.
+    echo "→ Sensitive files found, adding to .gitignore: $(echo "$to_ignore" | tr '\n' ' ')"
   fi
 
   VISIBILITY=$(ask_visibility)
@@ -341,7 +325,7 @@ run_step 05_branch_prepare.sh
 
 # If sensitive patterns were found during scan, commit them first as their own
 # concern — separate from the .repokit bookkeeping commit below.
-if [[ ${#to_ignore[@]} -gt 0 ]]; then
+if [[ -n "${to_ignore:-}" ]]; then
   git add .gitignore
   if ! git diff --cached --quiet; then
     repokit_commit "add sensitive patterns to .gitignore"
@@ -356,21 +340,9 @@ fi
 "$REPOKORE" config set language "$LANGUAGE"
 "$REPOKORE" config set base_branch "$BASE_BRANCH"
 
-# Add .repokit to .gitignore if it isn't already listed there.
-# grep -qxF: -q = silent (exit code only); -x = whole-line match (not substring);
-# -F = literal string, not regex (so "." is a dot, not "any character").
-# 2>/dev/null = don't error if .gitignore doesn't exist yet.
-if ! grep -qxF '.repokit' .gitignore 2> /dev/null; then
-  # Ensure the file ends with a newline before appending, so our new line
-  # doesn't get merged onto the last existing line.
-  # -s = file exists and has size > 0.
-  # tail -c1 = read the last byte of the file.
-  # -n STRING = true if the string is non-empty (i.e. the last byte is not \n).
-  if [[ -s .gitignore && -n "$(tail -c1 .gitignore)" ]]; then
-    echo >> .gitignore # echo with no argument outputs just a newline
-  fi
-  echo '.repokit' >> .gitignore
-fi
+# Add .repokit to .gitignore if it isn't already listed there. Idempotent, and
+# it terminates a file that doesn't end in a newline before appending.
+"$REPOKORE" gitignore add .repokit > /dev/null
 git add .gitignore
 # Commit only if something was actually staged (avoids empty commits).
 # git diff --cached compares the index (staged) to HEAD.
