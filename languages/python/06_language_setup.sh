@@ -7,10 +7,6 @@ SKILL_DST=".claude/skills/repokit.md"
 
 TPL="$SCRIPT_DIR/languages/python/pyproject.toml"
 
-# Substitute placeholders before any file comparisons so we diff final content,
-# not the template with {{REPO}}/{{OWNER}} literals still in it.
-new_content=$(sed "s/{{REPO}}/$REPO/g; s/{{OWNER}}/$OWNER/g" "$TPL")
-
 # ── Claude skill ──────────────────────────────────────────────────────────────
 #
 # The skill tells Claude Code what repokit owns in this repo (workflows, version)
@@ -61,66 +57,28 @@ fi
 
 # ── pyproject.toml ────────────────────────────────────────────────────────────
 #
-# Hash the rendered template to detect changes across runs.
-# We compare template-to-template (not template-to-file) so user edits don't
-# trigger unnecessary merges — only actual template updates do.
+# repokore does the work: renders the template, fingerprints it, compares that
+# against template_hash in .repokit, merges, and records the new hash. This
+# script only decides which of the three cases applies and commits the result.
 
-new_hash=$(printf '%s' "$new_content" | openssl dgst -sha256 | awk '{print $2}')
+# $REPOKORE is exported by the orchestrator and verified in 01_check_tools.sh.
 
-# Update a single key in .repokit without touching other fields.
-repokit_set_field() {
-  local key="$1" val="$2" tmp
-  tmp=$(mktemp)
-  grep -v "^${key}=" .repokit 2> /dev/null > "$tmp" || true
-  printf '%s=%s\n' "$key" "$val" >> "$tmp"
-  mv "$tmp" .repokit
-}
-
-if [[ "${REPOKIT_FORCE:-false}" == true ]]; then
-  # --force-pyproject: overwrite entirely, no merge
-  echo "→ Writing pyproject.toml (forced)..."
-  printf '%s\n' "$new_content" > pyproject.toml
-  git add pyproject.toml
-  repokit_commit "update pyproject.toml"
-  repokit_set_field "template_hash" "$new_hash"
-
-elif [[ ! -f "pyproject.toml" ]]; then
-  # First run: file doesn't exist yet, write template directly
+if [[ ! -f "pyproject.toml" ]]; then
   echo "→ Writing pyproject.toml..."
-  printf '%s\n' "$new_content" > pyproject.toml
+  "$REPOKORE" render-template --repo "$REPO" --owner "$OWNER" --state .repokit --out pyproject.toml "$TPL"
   git add pyproject.toml
   repokit_commit "add pyproject.toml"
-  repokit_set_field "template_hash" "$new_hash"
 
-else
-  stored_hash=$(grep '^template_hash=' .repokit 2> /dev/null | cut -d= -f2 || true)
+elif [[ "${REPOKIT_FORCE:-false}" == true ]]; then
+  echo "→ Writing pyproject.toml (forced)..."
+  "$REPOKORE" render-template --repo "$REPO" --owner "$OWNER" --state .repokit --out pyproject.toml "$TPL"
+  git add pyproject.toml
+  repokit_commit "update pyproject.toml"
 
-  if [[ "$new_hash" == "$stored_hash" ]]; then
-    echo "→ pyproject.toml is up to date, skipping"
-  else
-    # Template changed — merge managed keys into user's file.
-    # Overridable so tests can point at a stub instead of the real binary.
-    REPOKORE="${REPOKORE:-$SCRIPT_DIR/bin/repokore}"
-
-    if [[ ! -x "$REPOKORE" ]]; then
-      echo "⚠ pyproject.toml template changed but repokore not found — skipping merge"
-      echo "  Reinstall repokit: curl -fsSL https://raw.githubusercontent.com/djachenko/repokit/master/install.sh | bash"
-    fi
-
-    if [[ -x "$REPOKORE" ]]; then
-      tmpl_tmp=$(mktemp)
-      # Always clean up temp file, even if merge fails or script is interrupted.
-      trap 'rm -f "$tmpl_tmp"' EXIT
-      printf '%s\n' "$new_content" > "$tmpl_tmp"
-
-      echo "→ Merging pyproject.toml..."
-      if "$REPOKORE" merge-pyproject "$tmpl_tmp" pyproject.toml; then
-        git add pyproject.toml
-        repokit_commit "update pyproject.toml"
-        repokit_set_field "template_hash" "$new_hash"
-      else
-        echo "✗ merge failed — pyproject.toml not updated"
-      fi
-    fi
-  fi
+# Exit 0 means the file was merged and needs committing. Any non-zero status —
+# 3 for "template unchanged", 1 for a real failure — means there is nothing to
+# commit; repokore has already said which on its own output.
+elif "$REPOKORE" merge-pyproject --repo "$REPO" --owner "$OWNER" --state .repokit "$TPL" pyproject.toml; then
+  git add pyproject.toml
+  repokit_commit "update pyproject.toml"
 fi

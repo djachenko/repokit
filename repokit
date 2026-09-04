@@ -10,6 +10,12 @@ set -e
 # "cd ... && pwd" resolves any relative path or symlink to an absolute one.
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
+# repokore handles the parts bash does badly: config formats, template
+# rendering, structured output. Overridable so tests can point at a fresh build
+# instead of the installed one.
+REPOKORE="${REPOKORE:-$SCRIPT_DIR/bin/repokore}"
+export REPOKORE
+
 # ── Parse .repokit state before any flags so --language can override ──────────
 
 LANGUAGE=""
@@ -28,10 +34,7 @@ AVAILABLE_LANGUAGES_DISPLAY=$(echo "$AVAILABLE_LANGUAGES" | tr '\n' ' ')
 IS_FIRST_SETUP=true
 export IS_FIRST_SETUP
 if [[ -f .repokit ]]; then
-  # Extract the value after "language=" on that line.
-  # grep '^language=' selects only the matching line; cut -d= -f2 splits on
-  # "=" and returns the second field (the value to the right of "=").
-  LANGUAGE=$(grep '^language=' .repokit | cut -d= -f2)
+  LANGUAGE=$("$REPOKORE" config get language)
   IS_FIRST_SETUP=false
 fi
 
@@ -346,16 +349,12 @@ if [[ ${#to_ignore[@]} -gt 0 ]]; then
 fi
 
 # Write current run's settings to .repokit so re-runs and subshells can read them.
-# printf 'format' args = like Python's format string; %s = string, \n = newline.
-# Only the two fields repokit itself manages get rewritten; everything else is
-# carried over. Language scripts add template_hash, and app_id is set by hand
+# Only the two fields repokit itself manages are touched; everything else stays
+# where it is. Language scripts add template_hash, and app_id is set by hand
 # after the user creates their GitHub App so the ruleset step can put it in
 # bypass_actors — neither must be lost on a re-run.
-# Written through a temp file because the block reads .repokit while rewriting it.
-{
-  printf 'language=%s\nbase_branch=%s\n' "$LANGUAGE" "$BASE_BRANCH"
-  grep -vE '^(language|base_branch)=' .repokit 2> /dev/null || true
-} > .repokit.tmp && mv .repokit.tmp .repokit
+"$REPOKORE" config set language "$LANGUAGE"
+"$REPOKORE" config set base_branch "$BASE_BRANCH"
 
 # Add .repokit to .gitignore if it isn't already listed there.
 # grep -qxF: -q = silent (exit code only); -x = whole-line match (not substring);
