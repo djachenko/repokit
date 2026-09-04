@@ -9,8 +9,8 @@ find "$SCRIPT_DIR" -type f \
   ! -name 'adopt' ! -name 'install' \
   ! -name 'uninstall' ! -name 'restart' \
   ! -name 'watch' ! -name 'commit' \
-  ! -name '*.md' \
-  | while read -r src; do
+  ! -name '*.md' |
+  while read -r src; do
     rel="${src#$SCRIPT_DIR/}"
     dest="$HOME/$rel"
     if [[ -e "$dest" && ! -L "$dest" ]]; then
@@ -24,7 +24,7 @@ find "$SCRIPT_DIR" -type f \
 
 LABEL="com.$(whoami).$(basename "$SCRIPT_DIR")-watch"
 PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
-cat > "$PLIST" <<EOF
+cat > "$PLIST" << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
