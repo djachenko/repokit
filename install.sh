@@ -47,14 +47,15 @@ trap 'rm -rf "$TMP"' EXIT
 echo "Downloading repokit..."
 curl -fsSL "$TARBALL_URL" | tar xz -C "$TMP"
 
-# Fetch the binary while the existing install is still untouched — a missing
-# asset is then discovered before the point of no return, not after it.
-# curl leaves a partial file behind on failure, so drop it and let the presence
-# of $TMP/repokore be the single check further down.
+# Fetch the binary while the existing install is still untouched, so a missing
+# asset aborts before the point of no return and leaves the working install
+# alone. repokit cannot run without repokore — it reads .repokit and renders
+# every template — so this is fatal rather than a warning.
 echo "Downloading repokore..."
 if ! curl -fsSL "$BIN_URL" -o "$TMP/repokore" 2> /dev/null; then
-  rm -f "$TMP/repokore"
-  echo "⚠ Could not download repokore for ${OS}/${ARCH} — smart-merge of pyproject.toml will be unavailable"
+  echo "✗ Could not download repokore for ${OS}/${ARCH} from $BIN_URL" >&2
+  echo "  The release may not publish a binary for this platform." >&2
+  exit 1
 fi
 
 echo "Installing to $INSTALL_DIR..."
@@ -81,13 +82,10 @@ echo "$VERSION" > "$INSTALL_DIR/VERSION"
 # Language setup scripts are called with `bash <script>` so they don't need +x.
 chmod +x "$INSTALL_DIR/repokit" "$INSTALL_DIR"/init/*.sh "$INSTALL_DIR"/hooks/*
 
-# Put the binary downloaded above in place. Absent means the download failed and
-# already warned; the rest of repokit works, only smart-merge is unavailable.
-if [[ -f "$TMP/repokore" ]]; then
-  mkdir -p "$INSTALL_DIR/bin"
-  mv "$TMP/repokore" "$INSTALL_DIR/bin/repokore"
-  chmod +x "$INSTALL_DIR/bin/repokore"
-fi
+# Put the binary downloaded above in place. Its absence was already fatal.
+mkdir -p "$INSTALL_DIR/bin"
+mv "$TMP/repokore" "$INSTALL_DIR/bin/repokore"
+chmod +x "$INSTALL_DIR/bin/repokore"
 
 # ── Shell integration ─────────────────────────────────────────────────────────
 #
