@@ -38,6 +38,8 @@ func main() {
 		commands.Gitignore(args)
 	case "check-authors":
 		commands.CheckAuthors(args)
+	case "group-changes":
+		commands.GroupChanges(args)
 	default:
 		fmt.Fprintf(os.Stderr, "unknown command: %s\n\n", os.Args[1])
 		usage()
@@ -57,5 +59,6 @@ func usage() {
 	fmt.Fprintln(os.Stderr, "  gitignore sensitive [--file F] [--dir D]")
 	fmt.Fprintln(os.Stderr, "  check-authors ranges < pre-push-protocol")
 	fmt.Fprintln(os.Stderr, "  check-authors filter [--allowed EMAIL]... < git-log")
+	fmt.Fprintln(os.Stderr, "  group-changes <keys|paths|message> --status F [--key K]")
 	os.Exit(1)
 }
