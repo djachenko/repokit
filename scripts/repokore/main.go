@@ -36,6 +36,8 @@ func main() {
 		commands.RulesetChecks(args)
 	case "gitignore":
 		commands.Gitignore(args)
+	case "check-authors":
+		commands.CheckAuthors(args)
 	default:
 		fmt.Fprintf(os.Stderr, "unknown command: %s\n\n", os.Args[1])
 		usage()
@@ -53,5 +55,7 @@ func usage() {
 	fmt.Fprintln(os.Stderr, "  ruleset-checks [--reusable DIR] <workflow.yml>...")
 	fmt.Fprintln(os.Stderr, "  gitignore add [--file F] <pattern>...")
 	fmt.Fprintln(os.Stderr, "  gitignore sensitive [--file F] [--dir D]")
+	fmt.Fprintln(os.Stderr, "  check-authors ranges < pre-push-protocol")
+	fmt.Fprintln(os.Stderr, "  check-authors filter [--allowed EMAIL]... < git-log")
 	os.Exit(1)
 }
