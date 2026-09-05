@@ -13,8 +13,20 @@ jobs:
       - name: Install tools
         run: sudo apt-get install -y shellcheck shfmt
 
+      # Collected by shebang rather than by extension. Half the shell in this
+      # repo has no .sh on it — the orchestrator, the git hook, and every
+      # dotfiles template are extensionless — so a name-based list silently
+      # stopped covering exactly the files that carry the most logic.
+      - name: Collect shell scripts
+        run: |
+          git ls-files | while read -r f; do
+            head -n1 "$f" | grep -qE '^#!.*\b(ba)?sh$' && echo "$f"
+          done > shell-files.txt
+          echo "Linting:"
+          cat shell-files.txt
+
       - name: shellcheck
-        run: find . -name "*.sh" -o -name "repokit" | xargs shellcheck
+        run: xargs -r shellcheck -x < shell-files.txt
 
       - name: shfmt
-        run: find . -name "*.sh" | xargs shfmt -i 2 -sr -d
+        run: xargs -r shfmt -i 2 -sr -d < shell-files.txt

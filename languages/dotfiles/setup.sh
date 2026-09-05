@@ -17,14 +17,9 @@ for script in adopt install watch commit uninstall restart; do
   fi
 done
 
-needs_gitignore_update=false
-for entry in 'CLAUDE.local.md' '_claude' 'logs/'; do
-  if ! grep -qxF "$entry" .gitignore 2> /dev/null; then
-    echo "$entry" >> .gitignore
-    needs_gitignore_update=true
-  fi
-done
-if $needs_gitignore_update; then
+# repokore appends only the entries that are missing and prints them, so an
+# empty result means .gitignore already listed everything and needs no commit.
+if [[ -n "$("$REPOKORE" gitignore add 'CLAUDE.local.md' '_claude' 'logs/')" ]]; then
   git add .gitignore
   written+=(".gitignore")
 fi

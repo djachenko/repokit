@@ -1,0 +1,38 @@
+name: Go Release
+
+on:
+  workflow_call:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: scripts/repokore/go.mod
+          cache-dependency-path: scripts/repokore/go.sum
+
+      - name: Test
+        working-directory: scripts/repokore
+        run: go test ./...
+
+      - name: Build binaries
+        working-directory: scripts/repokore
+        run: |
+          mkdir -p ../../bin
+          for goos in darwin linux; do
+            for goarch in amd64 arm64; do
+              GOOS=$goos GOARCH=$goarch go build \
+                -ldflags="-s -w" \
+                -o "../../bin/repokore-${goos}-${goarch}" \
+                .
+            done
+          done
+
+      - uses: actions/upload-artifact@v8
+        with:
+          name: go-binaries
+          path: bin/

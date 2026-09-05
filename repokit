@@ -10,6 +10,12 @@ set -e
 # "cd ... && pwd" resolves any relative path or symlink to an absolute one.
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
+# repokore handles the parts bash does badly: config formats, template
+# rendering, structured output. Overridable so tests can point at a fresh build
+# instead of the installed one.
+REPOKORE="${REPOKORE:-$SCRIPT_DIR/bin/repokore}"
+export REPOKORE
+
 # ── Parse .repokit state before any flags so --language can override ──────────
 
 LANGUAGE=""
@@ -28,10 +34,7 @@ AVAILABLE_LANGUAGES_DISPLAY=$(echo "$AVAILABLE_LANGUAGES" | tr '\n' ' ')
 IS_FIRST_SETUP=true
 export IS_FIRST_SETUP
 if [[ -f .repokit ]]; then
-  # Extract the value after "language=" on that line.
-  # grep '^language=' selects only the matching line; cut -d= -f2 splits on
-  # "=" and returns the second field (the value to the right of "=").
-  LANGUAGE=$(grep '^language=' .repokit | cut -d= -f2)
+  LANGUAGE=$("$REPOKORE" config get language)
   IS_FIRST_SETUP=false
 fi
 
@@ -41,57 +44,57 @@ fi
 # $# = number of remaining positional arguments.
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --version|-v)
-      # Read the version file; fall back to "unknown" if it doesn't exist.
-      # 2>/dev/null = discard error messages (stderr) so "No such file" never
-      # appears. || echo "unknown" = substitute if the command failed.
-      VERSION=$(cat "$SCRIPT_DIR/VERSION" 2>/dev/null || echo "unknown")
-      echo "repokit $VERSION"
-      exit 0
-      ;;
-    --help|-h)
-      echo "Usage: repokit [--language <name>] [--force-workflows] [--force-pyproject]"
-      echo ""
-      echo "Initializes a GitHub repository in the current directory."
-      echo ""
-      echo "  1. Create a folder:  mkdir my-repo"
-      echo "  2. Enter it:         cd my-repo"
-      echo "  3. Run:              repokit --language python"
-      echo ""
-      echo "On subsequent runs --language is optional if .repokit exists locally."
-      echo ""
-      echo "Options:"
-      echo "  --language <name>    Language profile to use."
-      echo "                       Available: $AVAILABLE_LANGUAGES_DISPLAY"
-      echo "  --force-workflows    Overwrite workflows even if not repokit-managed;"
-      echo "                       commits under repokit authorship."
-      echo "  --force-pyproject    Overwrite pyproject.toml even if it already exists;"
-      echo "                       commits under repokit authorship."
-      echo ""
-      echo "Repo name is taken from the current directory name."
-      echo "GitHub owner is taken from 'gh auth'."
-      echo ""
-      echo "Requirements:"
-      echo "  git  — https://git-scm.com"
-      echo "  gh   — https://cli.github.com (must be authenticated)"
-      exit 0
-      ;;
-    --language)
-      LANGUAGE="$2"
-      shift 2  # drop both the flag name and its value from the argument list
-      ;;
-    --force-workflows)
-      FORCE_WORKFLOWS=true
-      shift    # drop just the flag
-      ;;
-    --force-pyproject)
-      FORCE_PYPROJECT=true
-      shift
-      ;;
-    *)
-      echo "Unknown option: $1"
-      exit 1
-      ;;
+  --version | -v)
+    # Read the version file; fall back to "unknown" if it doesn't exist.
+    # 2>/dev/null = discard error messages (stderr) so "No such file" never
+    # appears. || echo "unknown" = substitute if the command failed.
+    VERSION=$(cat "$SCRIPT_DIR/VERSION" 2> /dev/null || echo "unknown")
+    echo "repokit $VERSION"
+    exit 0
+    ;;
+  --help | -h)
+    echo "Usage: repokit [--language <name>] [--force-workflows] [--force-pyproject]"
+    echo ""
+    echo "Initializes a GitHub repository in the current directory."
+    echo ""
+    echo "  1. Create a folder:  mkdir my-repo"
+    echo "  2. Enter it:         cd my-repo"
+    echo "  3. Run:              repokit --language python"
+    echo ""
+    echo "On subsequent runs --language is optional if .repokit exists locally."
+    echo ""
+    echo "Options:"
+    echo "  --language <name>    Language profile to use."
+    echo "                       Available: $AVAILABLE_LANGUAGES_DISPLAY"
+    echo "  --force-workflows    Overwrite workflows even if not repokit-managed;"
+    echo "                       commits under repokit authorship."
+    echo "  --force-pyproject    Overwrite pyproject.toml even if it already exists;"
+    echo "                       commits under repokit authorship."
+    echo ""
+    echo "Repo name is taken from the current directory name."
+    echo "GitHub owner is taken from 'gh auth'."
+    echo ""
+    echo "Requirements:"
+    echo "  git  — https://git-scm.com"
+    echo "  gh   — https://cli.github.com (must be authenticated)"
+    exit 0
+    ;;
+  --language)
+    LANGUAGE="$2"
+    shift 2 # drop both the flag name and its value from the argument list
+    ;;
+  --force-workflows)
+    FORCE_WORKFLOWS=true
+    shift # drop just the flag
+    ;;
+  --force-pyproject)
+    FORCE_PYPROJECT=true
+    shift
+    ;;
+  *)
+    echo "Unknown option: $1"
+    exit 1
+    ;;
   esac
 done
 
@@ -171,7 +174,7 @@ ask_yn() {
   # -r = don't treat backslash as escape; -n 1 = stop after one character.
   read -rn 1 answer
 
-  echo  # move the cursor to the next line after the keypress
+  echo # move the cursor to the next line after the keypress
 
   # Test if the character is Y or y.
   # =~ is regex match; ^[Yy]$ = start, one of Y/y, end (exactly one char).
@@ -189,9 +192,9 @@ ask_visibility() {
   read -rn 1 choice
   echo >&2
   case "$choice" in
-    r|R) echo "private" ;;
-    u|U) echo "public" ;;
-    *)   ;;
+  r | R) echo "private" ;;
+  u | U) echo "public" ;;
+  *) ;;
   esac
 }
 export -f ask_visibility
@@ -224,12 +227,12 @@ OWNER=$(gh api user --jq '.login')
 # non-zero if not. &>/dev/null discards both stdout and stderr (we only
 # care about the exit code). && runs the assignment only on success.
 HAS_GIT=false
-git rev-parse --git-dir &>/dev/null && HAS_GIT=true
+git rev-parse --git-dir &> /dev/null && HAS_GIT=true
 
 # Check whether a GitHub repo with this name already exists under this owner.
 # gh repo view exits 0 if the repo exists, non-zero otherwise.
 HAS_REMOTE=false
-gh repo view "$OWNER/$REPO" &>/dev/null && HAS_REMOTE=true
+gh repo view "$OWNER/$REPO" &> /dev/null && HAS_REMOTE=true
 
 if [[ "$HAS_GIT" == false && "$HAS_REMOTE" == true ]]; then
   echo "Error: GitHub repo '$OWNER/$REPO' already exists but no local git. Clone it first."
@@ -262,7 +265,7 @@ if [[ "$HAS_GIT" == true ]]; then
   # 2>/dev/null = discard stderr only (stdout still flows normally).
   # || true = if the command fails, produce an empty string instead of aborting
   # (set -e would otherwise exit here because there's no "origin" remote).
-  remote_url=$(git remote get-url origin 2>/dev/null || true)
+  remote_url=$(git remote get-url origin 2> /dev/null || true)
 
   if [[ -z "$remote_url" && "$HAS_REMOTE" == true ]]; then
     # GitHub repo exists but no local origin — previous run interrupted between
@@ -282,31 +285,15 @@ fi
 # ── Create GitHub repo + initial push (if needed) ────────────────────────────
 
 if [[ "$HAS_REMOTE" == false ]]; then
-  # Scan for known sensitive file patterns and protect them in .gitignore
-  # before any content reaches GitHub. Only adds patterns that actually match
-  # something in the current directory (no noise for absent patterns).
-  shopt -s nullglob
-  sensitive_patterns=(".env" ".env.*" "*.pem" "*.key" "*.p8" "*.p12" "*.pfx" "secrets.*" "credentials.*" "*.secret")
-  to_ignore=()
-  for pattern in "${sensitive_patterns[@]}"; do
-    # shellcheck disable=SC2206  # glob expansion under nullglob is intentional
-    matches=($pattern)
-    # matches[@] expands to the list of files; -gt 0 = at least one file found.
-    if [[ ${#matches[@]} -gt 0 ]]; then
-      # -qxF: quiet, whole-line, literal string — avoids false positives from
-      # substring matches (e.g. "key" matching inside "monkey.txt").
-      if ! grep -qxF "$pattern" .gitignore 2>/dev/null; then
-        to_ignore+=("$pattern")
-      fi
-    fi
-  done
-  shopt -u nullglob
+  # Protect credential files in .gitignore before any content reaches GitHub.
+  # repokore scans for the known patterns, adds the ones that match something
+  # here, and prints what it added — nothing for a directory with no secrets in
+  # it, so the message and the commit below are skipped.
+  to_ignore=$("$REPOKORE" gitignore sensitive)
 
-  if [[ ${#to_ignore[@]} -gt 0 ]]; then
-    echo "→ Sensitive files found, adding to .gitignore: ${to_ignore[*]}"
-    for pattern in "${to_ignore[@]}"; do
-      echo "$pattern" >> .gitignore
-    done
+  if [[ -n "$to_ignore" ]]; then
+    # tr turns the one-per-line output into a single readable line.
+    echo "→ Sensitive files found, adding to .gitignore: $(echo "$to_ignore" | tr '\n' ' ')"
   fi
 
   VISIBILITY=$(ask_visibility)
@@ -321,7 +308,7 @@ if [[ "$HAS_REMOTE" == false ]]; then
   # git log --oneline prints one line per commit; 2>/dev/null suppresses the
   # "fatal: no commits" error on a brand-new repo. grep -q . = "any output exists"
   # (. matches any character, -q = silent, just the exit code).
-  if git log --oneline 2>/dev/null | grep -q .; then
+  if git log --oneline 2> /dev/null | grep -q .; then
     echo "→ Pushing existing history..."
     # -u = set upstream tracking so future git push/pull work without arguments.
     run_quiet git push -u origin HEAD
@@ -338,7 +325,7 @@ run_step 05_branch_prepare.sh
 
 # If sensitive patterns were found during scan, commit them first as their own
 # concern — separate from the .repokit bookkeeping commit below.
-if [[ ${#to_ignore[@]} -gt 0 ]]; then
+if [[ -n "${to_ignore:-}" ]]; then
   git add .gitignore
   if ! git diff --cached --quiet; then
     repokit_commit "add sensitive patterns to .gitignore"
@@ -346,29 +333,16 @@ if [[ ${#to_ignore[@]} -gt 0 ]]; then
 fi
 
 # Write current run's settings to .repokit so re-runs and subshells can read them.
-# app_id is set manually by the user after creating their GitHub App; preserve it
-# across re-runs so the ruleset step can include it in bypass_actors.
-existing_app_id=$(grep '^app_id=' .repokit 2>/dev/null | cut -d= -f2)
-{
-  printf 'language=%s\nbase_branch=%s\n' "$LANGUAGE" "$BASE_BRANCH"
-  [[ -n "$existing_app_id" ]] && printf 'app_id=%s\n' "$existing_app_id"
-} > .repokit
+# Only the two fields repokit itself manages are touched; everything else stays
+# where it is. Language scripts add template_hash, and app_id is set by hand
+# after the user creates their GitHub App so the ruleset step can put it in
+# bypass_actors — neither must be lost on a re-run.
+"$REPOKORE" config set language "$LANGUAGE"
+"$REPOKORE" config set base_branch "$BASE_BRANCH"
 
-# Add .repokit to .gitignore if it isn't already listed there.
-# grep -qxF: -q = silent (exit code only); -x = whole-line match (not substring);
-# -F = literal string, not regex (so "." is a dot, not "any character").
-# 2>/dev/null = don't error if .gitignore doesn't exist yet.
-if ! grep -qxF '.repokit' .gitignore 2>/dev/null; then
-  # Ensure the file ends with a newline before appending, so our new line
-  # doesn't get merged onto the last existing line.
-  # -s = file exists and has size > 0.
-  # tail -c1 = read the last byte of the file.
-  # -n STRING = true if the string is non-empty (i.e. the last byte is not \n).
-  if [[ -s .gitignore && -n "$(tail -c1 .gitignore)" ]]; then
-    echo >> .gitignore  # echo with no argument outputs just a newline
-  fi
-  echo '.repokit' >> .gitignore
-fi
+# Add .repokit to .gitignore if it isn't already listed there. Idempotent, and
+# it terminates a file that doesn't end in a newline before appending.
+"$REPOKORE" gitignore add .repokit > /dev/null
 git add .gitignore
 # Commit only if something was actually staged (avoids empty commits).
 # git diff --cached compares the index (staged) to HEAD.

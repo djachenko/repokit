@@ -7,10 +7,6 @@ SKILL_DST=".claude/skills/repokit.md"
 
 TPL="$SCRIPT_DIR/languages/python/pyproject.toml"
 
-# Substitute placeholders before any file comparisons so we diff final content,
-# not the template with {{REPO}}/{{OWNER}} literals still in it.
-new_content=$(sed "s/{{REPO}}/$REPO/g; s/{{OWNER}}/$OWNER/g" "$TPL")
-
 # ── Claude skill ──────────────────────────────────────────────────────────────
 #
 # The skill tells Claude Code what repokit owns in this repo (workflows, version)
@@ -61,17 +57,28 @@ fi
 
 # ── pyproject.toml ────────────────────────────────────────────────────────────
 #
-# Skip if the user has modified the file (they added classifiers, dependencies,
-# etc.) unless --force-pyproject was passed.  We compare against the rendered
-# template, not the source, so a re-run with the same REPO/OWNER is a no-op.
+# repokore does the work: renders the template, fingerprints it, compares that
+# against template_hash in .repokit, merges, and records the new hash. This
+# script only decides which of the three cases applies and commits the result.
 
-if [[ -f "pyproject.toml" && "${REPOKIT_FORCE:-false}" == false ]]; then
-  if [[ "$new_content" != "$(cat pyproject.toml)" ]]; then
-    echo "→ Writing pyproject.toml... skip (modified by user — use --force-pyproject to overwrite)"
-  fi
-else
+# $REPOKORE is exported by the orchestrator and verified in 01_check_tools.sh.
+
+if [[ ! -f "pyproject.toml" ]]; then
   echo "→ Writing pyproject.toml..."
-  echo "$new_content" > pyproject.toml
+  "$REPOKORE" render-template --repo "$REPO" --owner "$OWNER" --state .repokit --out pyproject.toml "$TPL"
   git add pyproject.toml
   repokit_commit "add pyproject.toml"
+
+elif [[ "${REPOKIT_FORCE:-false}" == true ]]; then
+  echo "→ Writing pyproject.toml (forced)..."
+  "$REPOKORE" render-template --repo "$REPO" --owner "$OWNER" --state .repokit --out pyproject.toml "$TPL"
+  git add pyproject.toml
+  repokit_commit "update pyproject.toml"
+
+# Exit 0 means the file was merged and needs committing. Any non-zero status —
+# 3 for "template unchanged", 1 for a real failure — means there is nothing to
+# commit; repokore has already said which on its own output.
+elif "$REPOKORE" merge-pyproject --repo "$REPO" --owner "$OWNER" --state .repokit "$TPL" pyproject.toml; then
+  git add pyproject.toml
+  repokit_commit "update pyproject.toml"
 fi

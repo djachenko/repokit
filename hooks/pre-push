@@ -1,9 +1,25 @@
 #!/bin/bash
 
-USER_EMAIL=$(git config user.email 2>/dev/null || true)
-GLOBAL_ALLOWED=$(git config --global --get-all repokit.allowedEmail 2>/dev/null || true)
-LOCAL_ALLOWED=$(git config --local --get-all repokit.allowedEmail 2>/dev/null || true)
+# Refuse to push commits written by an unexpected author, unless told otherwise.
+#
+# git calls, config and the prompt live here; parsing the push protocol and the
+# log, and deciding which commits are unexpected, is repokore's job.
 
+# The hook is installed into .git/hooks, so the binary is found the same way the
+# rest of repokit finds it rather than by a path relative to this file.
+REPOKORE="${REPOKORE:-$HOME/.local/share/repokit/bin/repokore}"
+
+if [[ ! -x "$REPOKORE" ]]; then
+  echo "✗ repokore not found at $REPOKORE — cannot verify commit authors"
+  exit 1
+fi
+
+USER_EMAIL=$(git config user.email 2> /dev/null || true)
+GLOBAL_ALLOWED=$(git config --global --get-all repokit.allowedEmail 2> /dev/null || true)
+LOCAL_ALLOWED=$(git config --local --get-all repokit.allowedEmail 2> /dev/null || true)
+
+# ${var:+...} expands only when var is non-empty, so the joined list never
+# starts or ends with a stray blank line.
 ALL_ALLOWED="$GLOBAL_ALLOWED"
 if [[ -n "$LOCAL_ALLOWED" ]]; then
   ALL_ALLOWED="${ALL_ALLOWED:+$ALL_ALLOWED$'\n'}$LOCAL_ALLOWED"
@@ -17,61 +33,53 @@ if [[ -z "$ALL_ALLOWED" ]]; then
   exit 1
 fi
 
-while IFS=' ' read -r local_ref local_sha remote_ref remote_sha; do
-  # branch deletion — nothing to check
-  [[ "$local_sha" == "0000000000000000000000000000000000000000" ]] && continue
+# Turn the allowed list into repeated --allowed flags.
+allowed_flags=()
+while IFS= read -r email; do
+  [[ -n "$email" ]] && allowed_flags+=(--allowed "$email")
+done <<< "$ALL_ALLOWED"
 
-  if [[ "$remote_sha" == "0000000000000000000000000000000000000000" ]]; then
-    # new branch: commits reachable from local_sha but not yet on any remote
-    range="$local_sha --not --remotes"
+# repokore reads the push protocol from stdin and prints the rev-list arguments
+# for each ref being updated, tab separated. Deletions produce no line at all.
+# Reading into an array keeps multi-argument ranges ("<sha> --not --remotes")
+# from depending on word splitting.
+while IFS=$'\t' read -r -a range; do
+  [[ ${#range[@]} -eq 0 ]] && continue
+
+  log=$(git log --format="%h %ae %s" "${range[@]}" 2> /dev/null)
+  [[ -z "$log" ]] && continue
+
+  bad=$("$REPOKORE" check-authors filter "${allowed_flags[@]}" <<< "$log")
+  [[ -z "$bad" ]] && continue
+
+  if [[ "$(git config repokit.allowForeignAuthors)" == "true" ]]; then
+    continue
+  fi
+
+  echo "⚠ Commits with unexpected author email:"
+  while IFS=$'\t' read -r hash email subject; do
+    echo "  $hash <$email> $subject"
+  done <<< "$bad"
+  echo ""
+
+  # The hook's stdin is the push protocol, so the prompt has to talk to the
+  # terminal directly.
+  printf "[1] Allow once  [2] Allow always  [3] Deny (default): " > /dev/tty
+  read -r answer < /dev/tty
+
+  if [[ "$answer" == "1" ]]; then
+    continue
+  elif [[ "$answer" == "2" ]]; then
+    # cut -f2 takes the email column out of the tab-separated report; sort -u
+    # collapses repeats so an address is recorded once.
+    while IFS= read -r email; do
+      if ! git config --local --get-all repokit.allowedEmail 2> /dev/null | grep -qxF "$email"; then
+        git config --local --add repokit.allowedEmail "$email"
+        echo "→ Added $email to .git/config (repokit.allowedEmail)"
+      fi
+    done < <(cut -f2 <<< "$bad" | sort -u)
   else
-    range="$remote_sha..$local_sha"
+    echo "Aborted."
+    exit 1
   fi
-
-  [[ -z "$(git rev-list $range 2>/dev/null)" ]] && continue
-
-  bad=""
-  while IFS= read -r line; do
-    [[ -z "$line" ]] && continue
-    email=$(awk '{print $2}' <<< "$line")
-    if ! echo "$ALL_ALLOWED" | grep -qxF "$email"; then
-      bad+="$line"$'\n'
-    fi
-  done < <(git log --format="%h %ae %s" $range)
-  bad=${bad%$'\n'}
-
-  if [[ -n "$bad" ]]; then
-    if [[ "$(git config repokit.allowForeignAuthors)" == "true" ]]; then
-      continue
-    fi
-
-    echo "⚠ Commits with unexpected author email:"
-    while IFS= read -r line; do
-      [[ -z "$line" ]] && continue
-      hash=$(awk '{print $1}' <<< "$line")
-      email=$(awk '{print $2}' <<< "$line")
-      subject=$(awk '{$1=$2=""; print substr($0,3)}' <<< "$line")
-      echo "  $hash <$email> $subject"
-    done <<< "$bad"
-    echo ""
-    printf "[1] Allow once  [2] Allow always  [3] Deny (default): " > /dev/tty
-    read -r answer < /dev/tty
-    case "$answer" in
-      1) ;;
-      2)
-        while IFS= read -r line; do
-          [[ -z "$line" ]] && continue
-          email=$(awk '{print $2}' <<< "$line")
-          if ! git config --local --get-all repokit.allowedEmail 2>/dev/null | grep -qxF "$email"; then
-            git config --local --add repokit.allowedEmail "$email"
-            echo "→ Added $email to .git/config (repokit.allowedEmail)"
-          fi
-        done <<< "$bad"
-        ;;
-      *)
-        echo "Aborted."
-        exit 1
-        ;;
-    esac
-  fi
-done
+done < <("$REPOKORE" check-authors ranges)

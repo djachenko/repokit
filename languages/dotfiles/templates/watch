@@ -9,11 +9,11 @@ echo "[$(date '+%Y-%m-%d %H:%M:%S')] watch started" >> "$LOG"
 fswatch -o --latency 1 \
   --exclude "$SCRIPT_DIR/logs" \
   --exclude "$SCRIPT_DIR/.git" \
-  "$SCRIPT_DIR" \
-| while read -r _count; do
+  "$SCRIPT_DIR" |
+  while read -r _count; do
     while read -r -t 60 _; do :; done
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] committing" >> "$LOG"
-    "$SCRIPT_DIR/commit" >> "$LOG" 2>&1 \
-      && echo "[$(date '+%Y-%m-%d %H:%M:%S')] done" >> "$LOG" \
-      || echo "[$(date '+%Y-%m-%d %H:%M:%S')] commit failed" >> "$LOG"
+    "$SCRIPT_DIR/commit" >> "$LOG" 2>&1 &&
+      echo "[$(date '+%Y-%m-%d %H:%M:%S')] done" >> "$LOG" ||
+      echo "[$(date '+%Y-%m-%d %H:%M:%S')] commit failed" >> "$LOG"
   done
