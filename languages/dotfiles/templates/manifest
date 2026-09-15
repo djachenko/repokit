@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# Sourced, never run. The one list of files that belong to the tooling rather
+# than to the dotfiles themselves: install skips them when linking into $HOME,
+# and repokit's setup copies them in. Both read it from here so the two lists
+# cannot drift apart.
+#
+# Space-separated strings, not arrays: bash cannot export an array, and this
+# file is sourced into more than one script.
+export DOTFILES_SCRIPTS="adopt commit install restart uninstall watch"
+export DOTFILES_TOOLING="$DOTFILES_SCRIPTS manifest watch.plist"
