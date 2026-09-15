@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# Lists every tracked shell script, one path per line.
+#
+# Found by shebang rather than by name: half the shell in this repo has no .sh
+# on it — the orchestrator, the git hook, every dotfiles template — so a list
+# built from `find -name '*.sh'` silently left out the files carrying the most
+# logic. Used by the CI lint; usable by hand the same way:
+#
+#   scripts/shell-files | xargs shellcheck
+
+# -c = tracked files, -o = untracked, --exclude-standard = but not ignored
+# ones. Untracked matters locally: a script written a minute ago should be
+# linted before it is added, not after.
+git ls-files -c -o --exclude-standard | while read -r file; do
+  # -qE: quiet, extended regex. \b(ba)?sh$ matches both "bash" and "sh" at the
+  # end of the shebang line, whichever way it is spelled (/bin/bash,
+  # /usr/bin/env bash, /bin/sh).
+  # if/then rather than &&, so a non-script as the last file does not leave
+  # the loop — and the script — exiting non-zero.
+  if head -n1 "$file" | grep -qE '^#!.*\b(ba)?sh$'; then
+    echo "$file"
+  fi
+done

@@ -30,6 +30,7 @@ repokit/
 ├── hooks/
 │   └── pre-push                   # проверка author email, парсинг через repokore
 ├── scripts/
+│   ├── shell-files                # список shell-скриптов по shebang — для линта в CI и руками
 │   └── repokore/                  # Go: одна команда = строка в switch + пакет в internal/
 │       ├── main.go                # диспетчер сабкоманд, больше ничего
 │       └── internal/
@@ -57,7 +58,7 @@ repokit/
         ├── 08_branch_push.sh      # override: только инструкции, без PR
         ├── setup.sh               # кладёт adopt/install/watch/commit/uninstall/restart
         ├── instructions.sh        # постустановочный чеклист
-        ├── templates/             # шаблоны скриптов
+        ├── templates/             # скрипты + manifest (список tooling-файлов) + watch.plist + gitignore
         └── wrappers/              # пустые yml — CI не нужен
 ```
 
