@@ -5,9 +5,12 @@
 # git calls, config and the prompt live here; parsing the push protocol and the
 # log, and deciding which commits are unexpected, is repokore's job.
 
-# The hook is installed into .git/hooks, so the binary is found the same way the
-# rest of repokit finds it rather than by a path relative to this file.
-REPOKORE="${REPOKORE:-$HOME/.local/share/repokit/bin/repokore}"
+# The hook is a symlink from .git/hooks into the repokit install, so the binary
+# is found next to the hook's real location — readlink follows the link — the
+# same way the orchestrator finds it next to itself. A copied rather than
+# linked hook has no link to follow; the guard below then says so.
+HOOK=$(readlink "$0" || echo "$0")
+REPOKORE="$(cd "$(dirname "$HOOK")/.." && pwd)/bin/repokore"
 
 if [[ ! -x "$REPOKORE" ]]; then
   echo "✗ repokore not found at $REPOKORE — cannot verify commit authors"
