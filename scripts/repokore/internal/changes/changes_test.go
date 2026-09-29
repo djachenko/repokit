@@ -8,16 +8,19 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func parse(t *testing.T, porcelain string) []Change {
+// parse takes entries one per line, for readable fixtures, and feeds them to
+// Parse NUL-separated the way `git status --porcelain -z` writes them. Tests
+// about the -z format itself build their input by hand instead.
+func parse(t *testing.T, lines string) []Change {
 	t.Helper()
 
-	got, err := Parse(strings.NewReader(porcelain))
+	got, err := Parse(strings.NewReader(strings.ReplaceAll(lines, "\n", "\x00")))
 	require.NoError(t, err)
 
 	return got
 }
 
-func TestParse(t *testing.T) {
+func TestParse_ReadsStatusAndPath(t *testing.T) {
 	got := parse(t, " M nvim/lua/init.lua\n?? new.txt\n D old.txt\n")
 
 	assert.Equal(t, []Change{
@@ -28,11 +31,41 @@ func TestParse(t *testing.T) {
 }
 
 // A path with spaces is still one path: the status is fixed-width, so the rest
-// of the line is the name.
+// of the entry is the name.
 func TestParse_PathWithSpaces(t *testing.T) {
 	got := parse(t, " M my dir/some file.txt\n")
 
 	assert.Equal(t, "my dir/some file.txt", got[0].Path)
+}
+
+// Under -z git writes non-ASCII paths as they are. Without -z it would send
+// "\320\277…" in quotes, which no `git add` can find — the bug -z fixes.
+func TestParse_NonASCIIPathVerbatim(t *testing.T) {
+	got, err := Parse(strings.NewReader("?? заметки/план.md\x00"))
+
+	require.NoError(t, err)
+	assert.Equal(t, "заметки/план.md", got[0].Path)
+}
+
+// A rename is two entries under -z: the new path, then the old one bare. The
+// old one must not become a change of its own — it has nothing to stage and,
+// four characters or longer, would otherwise be read as status + path.
+func TestParse_RenameConsumesOldPath(t *testing.T) {
+	got, err := Parse(strings.NewReader("R  zsh/new-name\x00zsh/old-name\x00 M vim/.vimrc\x00"))
+
+	require.NoError(t, err)
+	assert.Equal(t, []Change{
+		{"R ", "zsh/new-name"},
+		{" M", "vim/.vimrc"},
+	}, got)
+}
+
+// A newline is legal in a file name, and -z keeps it inside the path.
+func TestParse_NewlineInPath(t *testing.T) {
+	got, err := Parse(strings.NewReader("?? odd\nname.txt\x00"))
+
+	require.NoError(t, err)
+	assert.Equal(t, []Change{{"??", "odd\nname.txt"}}, got)
 }
 
 // ── grouping ──────────────────────────────────────────────────────────────────

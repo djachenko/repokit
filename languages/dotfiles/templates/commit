@@ -23,12 +23,16 @@ fi
 STATUS=$(mktemp)
 trap 'rm -f "$STATUS"' EXIT
 
-git status --porcelain > "$STATUS"
+# -z: NUL-separated and unquoted. Without it git wraps any path with non-ASCII
+# bytes in quotes and octal escapes, and `git add` cannot find the result.
+git status --porcelain -z > "$STATUS"
 [[ -s "$STATUS" ]] || exit 0
 
 while IFS= read -r key; do
-  while IFS= read -r file; do
-    git add "$file"
+  # Paths come back NUL-separated for the same reason; read -d '' splits on NUL.
+  # -- ends options, so a file named like a flag is still just a file.
+  while IFS= read -r -d '' file; do
+    git add -- "$file"
   done < <("$REPOKORE" group-changes paths --status "$STATUS" --key "$key")
 
   # -F - reads the message from stdin, subject and body in one go.

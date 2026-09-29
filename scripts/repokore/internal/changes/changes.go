@@ -7,7 +7,6 @@
 package changes
 
 import (
-	"bufio"
 	"fmt"
 	"io"
 	"path"
@@ -15,7 +14,7 @@ import (
 	"strings"
 )
 
-// Change is one entry of `git status --porcelain`.
+// Change is one entry of `git status --porcelain -z`.
 type Change struct {
 	// Status is the two-letter XY code.
 	Status string
@@ -31,22 +30,42 @@ type Group struct {
 	Changes []Change
 }
 
-// Parse reads porcelain output. The path starts at column 4; the two columns
-// before it are the status, which may contain spaces.
+// Parse reads `git status --porcelain -z`: NUL-separated entries, each a
+// two-letter status, a space, and the path as-is.
+//
+// -z rather than plain porcelain because without it git quotes any path with
+// non-ASCII bytes and escapes them in octal — "\320\277…" for a Cyrillic name —
+// and that string names no file `git add` can find.
+//
+// A rename or copy takes two entries under -z: the new path in the entry
+// itself, then the old path as a bare entry of its own. Only the new one is
+// kept; the old one is gone from the tree and has nothing to stage.
 func Parse(r io.Reader) ([]Change, error) {
+	data, err := io.ReadAll(r)
+	if err != nil {
+		return nil, err
+	}
+
 	var changes []Change
 
-	scanner := bufio.NewScanner(r)
-	for scanner.Scan() {
-		line := scanner.Text()
-		if len(line) < 4 {
+	entries := strings.Split(string(data), "\x00")
+
+	for i := 0; i < len(entries); i++ {
+		entry := entries[i]
+		if len(entry) < 4 {
+			// The trailing NUL leaves an empty last element.
 			continue
 		}
 
-		changes = append(changes, Change{Status: line[:2], Path: line[3:]})
+		change := Change{Status: entry[:2], Path: entry[3:]}
+		changes = append(changes, change)
+
+		if strings.ContainsAny(change.Status, "RC") {
+			i++
+		}
 	}
 
-	return changes, scanner.Err()
+	return changes, nil
 }
 
 // Group buckets changes by area, ordered by key so repeated runs commit in the

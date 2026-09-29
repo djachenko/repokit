@@ -18,7 +18,7 @@ func GroupChanges(args []string) {
 	}
 
 	fs := flag.NewFlagSet("group-changes "+args[0], flag.ExitOnError)
-	status := fs.String("status", "", "file holding `git status --porcelain` output")
+	status := fs.String("status", "", "file holding `git status --porcelain -z` output")
 	key := fs.String("key", "", "group to report on")
 
 	parse(fs, args[1:], 0, "group-changes <keys|paths|message> --status F [--key K]")
@@ -56,8 +56,10 @@ func GroupChanges(args []string) {
 
 	switch args[0] {
 	case "paths":
+		// NUL-terminated, like the input: a path is the one thing here that
+		// can contain a newline.
 		for _, change := range group.Changes {
-			fmt.Println(change.Path)
+			fmt.Print(change.Path, "\x00")
 		}
 	case "message":
 		fmt.Print(group.Message())
