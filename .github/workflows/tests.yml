@@ -7,7 +7,16 @@ on:
     tags-ignore:
       - '**'
 
+# Local paths, not owner/repo/...@master. A local path resolves against the
+# commit being tested, so a branch is checked by its own linters and tests —
+# with @master it was checked by master's, one PR late, and a workflow that
+# existed only on the branch could not be found at all, which made this whole
+# file invalid and no job ran. Client wrappers keep @<version>: they call
+# across repositories, where a local path cannot reach.
 jobs:
   tests:
-    uses: djachenko/repokit/.github/workflows/bash-tests.yml@master
+    uses: ./.github/workflows/bash-tests.yml
     secrets: inherit
+
+  go-tests:
+    uses: ./.github/workflows/go-tests.yml

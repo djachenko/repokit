@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# Sourced, never run. Puts the repokore that ships with this install into
+# $REPOKORE and aborts the caller if it is not there.
+#
+# ${BASH_SOURCE[0]} is this file even when sourced — $0 would be whoever
+# sourced it — so the binary is located relative to where this script actually
+# sits, not to where the caller was invoked from or what its $0 happens to be.
+
+REPOKORE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/bin/repokore"
+export REPOKORE
+
+# repokore reads and writes .repokit and renders every template, so nothing
+# downstream works without it. Aborting here rather than at each call site: a
+# partial run that silently skips steps is worse than one that never starts.
+# -x = exists and is executable. `exit` in a sourced file exits the caller,
+# which is the point.
+if [[ ! -x "$REPOKORE" ]]; then
+  echo "✗ repokore not found at $REPOKORE" >&2
+  echo "  Reinstall: curl -fsSL https://raw.githubusercontent.com/djachenko/repokit/master/install.sh | bash" >&2
+  exit 1
+fi

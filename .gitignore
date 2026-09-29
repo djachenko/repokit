@@ -2,3 +2,7 @@
 CLAUDE.local.md
 _worktrees/
 _claude
+# repokore binaries: built by CI into release assets, downloaded by install.sh
+bin/
+# `go build` with no -o drops the binary next to the sources, named after the dir
+/scripts/repokore/repokore

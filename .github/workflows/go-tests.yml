@@ -1,0 +1,40 @@
+name: Go Tests
+
+# Pre-merge gate for repokore. go-release.yml runs the same tests, but it only
+# fires on push to master — by then a broken binary is already merged and the
+# failure blocks the release instead of the PR that caused it.
+
+on:
+  workflow_call:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: scripts/repokore/go.mod
+          cache-dependency-path: scripts/repokore/go.sum
+
+      - name: gofmt
+        working-directory: scripts/repokore
+        # gofmt -l prints unformatted files and still exits 0, so the empty-string
+        # test is what actually fails the job.
+        run: |
+          unformatted=$(gofmt -l .)
+          if [[ -n "$unformatted" ]]; then
+            echo "Not gofmt'd:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: go vet
+        working-directory: scripts/repokore
+        run: go vet ./...
+
+      - name: go test
+        working-directory: scripts/repokore
+        run: go test ./...
