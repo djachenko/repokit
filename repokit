@@ -11,10 +11,11 @@ set -e
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 # repokore handles the parts bash does badly: config formats, template
-# rendering, structured output. Overridable so tests can point at a fresh build
-# instead of the installed one.
-REPOKORE="${REPOKORE:-$SCRIPT_DIR/bin/repokore}"
-export REPOKORE
+# rendering, structured output. Sourcing sets $REPOKORE and aborts if the
+# binary is missing — which has to happen before the .repokit read below, the
+# first thing that calls it.
+# shellcheck source=scripts/repokore-env
+source "$SCRIPT_DIR/scripts/repokore-env"
 
 # ── Parse .repokit state before any flags so --language can override ──────────
 
