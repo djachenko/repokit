@@ -8,10 +8,13 @@ cd "$(dirname "$0")"
 # git calls stay here; deriving the groups, their files and the commit message
 # is repokore's job — it used to be four nested awk programs.
 
-REPOKORE="${REPOKORE:-$HOME/.local/share/repokit/bin/repokore}"
+# Filled in by repokit when it copies this script: the absolute path of the
+# binary from the install that set this repo up. Worked out here it would have
+# to guess — launchd runs this with neither repokit on PATH nor XDG_DATA_HOME.
+REPOKORE="{{REPOKORE}}"
 
 if [[ ! -x "$REPOKORE" ]]; then
-  echo "✗ repokore not found at $REPOKORE" >&2
+  echo "✗ repokore not found at $REPOKORE — re-run repokit in this repo" >&2
   exit 1
 fi
 
