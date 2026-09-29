@@ -8,7 +8,7 @@ Bash + шаблоны + Go-бинарь `repokore` для логики, кото
 
 **Граница исполнения:** repokore — только локальная машина (установка, настройка репо, git-хуки, dotfiles). Всё, что крутится на CI-раннере, в него не переносится: установки repokit там нет. Поэтому `.github/actions/python-versions/get_versions.py` остаётся Python — единственный Python в проекте.
 
-Бинарь обязателен: `install.sh` падает, если не смог его скачать, `01_check_tools.sh` проверяет наличие.
+Бинарь обязателен: `install.sh` падает, если не смог его скачать; `scripts/repokore-env` сорсится оркестратором и хуком, находит бинарь и прекращает работу, если его нет.
 
 ---
 
@@ -31,6 +31,7 @@ repokit/
 │   └── pre-push                   # проверка author email, парсинг через repokore
 ├── scripts/
 │   ├── shell-files                # список shell-скриптов по shebang — для линта в CI и руками
+│   ├── repokore-env               # sourced: находит бинарь, экспортирует $REPOKORE, падает если нет
 │   └── repokore/                  # Go: одна команда = строка в switch + пакет в internal/
 │       ├── main.go                # диспетчер сабкоманд, больше ничего
 │       └── internal/
@@ -40,6 +41,7 @@ repokit/
 │           ├── pyproject/         # точечный merge TOML поверх lossless AST
 │           ├── workflow/          # разбор workflow YAML, терминальная джоба
 │           ├── gitignore/         # идемпотентный append + скан секретов
+│           ├── managedfile/       # можно ли перезаписать файл: автор последнего коммита + незакоммиченное
 │           ├── authors/           # pre-push протокол и git log
 │           └── changes/           # группировка git status по областям
 └── languages/
@@ -56,7 +58,7 @@ repokit/
         ├── 05_branch_prepare.sh   # override: остаётся на master, не переключает ветку
         ├── 07_ruleset.sh          # override: пустой — dotfiles коммитит прямо в master
         ├── 08_branch_push.sh      # override: только инструкции, без PR
-        ├── setup.sh               # кладёт adopt/install/watch/commit/uninstall/restart
+        ├── 06_language_setup.sh   # кладёт и обновляет служебные скрипты из templates/manifest
         ├── instructions.sh        # постустановочный чеклист
         ├── templates/             # скрипты + manifest (список tooling-файлов) + watch.plist + gitignore
         └── wrappers/              # пустые yml — CI не нужен
@@ -86,7 +88,7 @@ Reusable workflows (не попадают в клиентские репо):
 4. Определяет состояние: есть ли локальный git, есть ли remote на GitHub
 5. Создаёт git / remote / initial commit только если их нет
 6. `run_step 05_branch_prepare.sh` — создаёт или rebase-ит `chore/repokit-setup`
-7. `run_step 06_workflows.sh`, `languages/$LANGUAGE/setup.sh`, `run_step 07_ruleset.sh`
+7. `run_step 06_workflows.sh`, `bash languages/$LANGUAGE/06_language_setup.sh`, `run_step 07_ruleset.sh`. Шаг 6 вызывается напрямую, без fallback на `init/` — файл обязан быть у **каждого** языка
 8. `run_step 08_branch_push.sh` — пушит ветку, открывает PR
 9. `instructions.sh` — только на первом запуске
 
@@ -101,16 +103,21 @@ Reusable workflows (не попадают в клиентские репо):
 | Команда | Кто зовёт |
 |---------|-----------|
 | `merge-pyproject` | `06_language_setup.sh` |
-| `render-template` | `06_workflows.sh`, `06_language_setup.sh` |
+| `render-template` | python `06_language_setup.sh` |
+| `sync` | `06_workflows.sh`, dotfiles `06_language_setup.sh` |
 | `config get/set` | оркестратор, `05_branch_prepare.sh`, `07_ruleset.sh` |
 | `ruleset-checks` | `07_ruleset.sh` |
-| `gitignore add/sensitive` | оркестратор, `dotfiles/setup.sh` |
+| `gitignore add/sensitive` | оркестратор, `dotfiles/06_language_setup.sh` |
 | `check-authors ranges/filter` | `hooks/pre-push` |
 | `group-changes keys/paths/message` | `dotfiles/templates/commit` |
 
-Exit-код **3** у `merge-pyproject` = «шаблон не менялся», в отличие от `1` = ошибка.
+Exit-код **3** у `merge-pyproject` = «менять нечего», в отличие от `1` = ошибка.
+
+`sync` — правило «управляемого файла» для всего, что repokit кладёт в чужой репо: пишет, только если последний коммит файла — от `repokit@djachenko` и незакоммиченных правок нет. Печатает путь, если записал. git только **читает** (`log`, `diff --quiet`) — изменяющие git-операции остаются в bash. Права нового файла берутся у шаблона, поэтому шаблоны скриптов лежат в репо с `+x`.
 
 Тесты: `cd scripts/repokore && go test ./...`. Без `./...` ничего не найдёт — в корневом пакете только `main.go`.
+
+Запуск repokit из чекаута: бинарь ищется в `bin/repokore` рядом с оркестратором, а в чекауте его нет (`bin/` в gitignore). Собрать: `cd scripts/repokore && go build -o ../../bin/repokore .` — без этого `repokit` из исходников не стартует.
 
 Merge правит текст поверх lossless AST, а не парсит в дерево и сериализует обратно. Тесты на него сравнивают **байты**, а не эквивалентность TOML: этот класс багов уже один раз проскочил мимо тестов на эквивалентность.
 
@@ -143,11 +150,15 @@ Merge правит текст поверх lossless AST, а не парсит в
 
 **tests.yml** — push на любую ветку → `bash-tests.yml` (shellcheck + shfmt) и `go-tests.yml` (gofmt + vet + test) двумя параллельными джобами. Go-тесты стоят здесь, а не только в релизе: иначе сломанный бинарь блокирует релиз уже после мержа, вместо того чтобы блокировать PR.
 
+Свои reusable workflow repokit зовёт **локальным путём** `./.github/workflows/…`, не `…@master`: так ветка проверяется своими же правилами, а не master'скими. `@версия` — только в том, что уезжает в клиентские репо.
+
 **release.yml** — push в master, три джобы по порядку:
 
 1. `build-go` → `go-release.yml`: кросс-компиляция `darwin/{amd64,arm64}` + `linux/{amd64,arm64}`, выгрузка артефакта `go-binaries`
-2. `release` → `bash-release.yml`: PSR тегирует, отдаёт наружу `released` и `version`
-3. `upload-go`: скачивает артефакт и `gh release upload` — только при `released == 'true'`
+2. `release` → `bash-release.yml`: PSR тегирует, создаёт релиз **черновиком**, отдаёт наружу `released` и `version`
+3. `upload-go`: скачивает артефакт, `gh release upload`, затем публикует релиз — только при `released == 'true'`
+
+Черновик — потому что `/releases/latest` (а значит, и `install.sh`) смотрит только на опубликованные: релиз без бинаря ломал бы установку у всех, пока ассеты не догрузятся, а при упавшей загрузке — навсегда.
 
 Сборка идёт **первой** осознанно: сломанный бинарь должен блокировать релиз, а не следовать за ним.
 
