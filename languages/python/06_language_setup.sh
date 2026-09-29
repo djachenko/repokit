@@ -61,7 +61,8 @@ fi
 # against template_hash in .repokit, merges, and records the new hash. This
 # script only decides which of the three cases applies and commits the result.
 
-# $REPOKORE is exported by the orchestrator and verified in 01_check_tools.sh.
+# $REPOKORE is exported by the orchestrator, which sources scripts/repokore-env
+# and so has already refused to run without the binary.
 
 if [[ ! -f "pyproject.toml" ]]; then
   echo "→ Writing pyproject.toml..."
@@ -73,10 +74,15 @@ elif [[ "${REPOKIT_FORCE:-false}" == true ]]; then
   echo "→ Writing pyproject.toml (forced)..."
   "$REPOKORE" render-template --repo "$REPO" --owner "$OWNER" --state .repokit --out pyproject.toml "$TPL"
   git add pyproject.toml
-  repokit_commit "update pyproject.toml"
+  # A forced write over a file that already matches the template stages
+  # nothing, and a commit of nothing fails — under set -e, the whole run.
+  # --quiet exits 1 when there are staged changes; ! inverts it.
+  if ! git diff --cached --quiet; then
+    repokit_commit "update pyproject.toml"
+  fi
 
-# Exit 0 means the file was merged and needs committing. Any non-zero status —
-# 3 for "template unchanged", 1 for a real failure — means there is nothing to
+# Exit 0 means the file changed and needs committing. Any non-zero status —
+# 3 for "nothing to change", 1 for a real failure — means there is nothing to
 # commit; repokore has already said which on its own output.
 elif "$REPOKORE" merge-pyproject --repo "$REPO" --owner "$OWNER" --state .repokit "$TPL" pyproject.toml; then
   git add pyproject.toml

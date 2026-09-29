@@ -62,15 +62,26 @@ func MergePyproject(args []string) {
 		fail("error merging %s: %v", targetPath, err)
 	}
 
-	// Written in full rather than in place: the merge already carried the
-	// untouched bytes through, so the file only changes where it decided to.
-	if err := os.WriteFile(targetPath, []byte(merged), 0o644); err != nil {
-		fail("error writing %s: %v", targetPath, err)
+	// A merge can decide nothing — every template key already present, every
+	// conflict kept. The template still counts as seen, so the hash is
+	// recorded; but exit 0 means "commit this" to the caller, and a commit of
+	// nothing fails and takes the whole run down with it.
+	unchanged := merged == string(current)
+
+	if !unchanged {
+		if err := writeAtomically(targetPath, []byte(merged), permFor(targetPath, "")); err != nil {
+			fail("error writing %s: %v", targetPath, err)
+		}
 	}
 
 	// Only after the merge landed — a failure here must leave the stored hash
 	// alone so the next run tries again instead of assuming success.
 	if err := config.Set(*statePath, "template_hash", hash); err != nil {
 		fail("error writing %s: %v", *statePath, err)
+	}
+
+	if unchanged {
+		fmt.Println("→ pyproject.toml already matches the template, nothing to change")
+		os.Exit(ExitUpToDate)
 	}
 }
