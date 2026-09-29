@@ -32,7 +32,7 @@ jobs:
             done
           done
 
-      - uses: actions/upload-artifact@v8
+      - uses: actions/upload-artifact@v7
         with:
           name: go-binaries
           path: bin/
