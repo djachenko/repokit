@@ -28,14 +28,16 @@ type Push struct {
 	RemoteSHA string
 }
 
-// Range returns the rev-list arguments for the commits this push would add, or
-// nil when there is nothing to check.
+// RevListArgs returns the arguments naming the commits this push would add, to
+// be passed to `git rev-list` or `git log`, or nil when there is nothing to
+// check.
 //
-// Returning arguments rather than a string is the point: the old
-// "$remote_sha --not --remotes" was a single value that only became three
-// arguments because it was left unquoted, which is also what would have
-// happened to any other whitespace in it.
-func (p Push) Range() []string {
+// A slice rather than a string even when it holds one element: the new-branch
+// case genuinely needs three arguments, and the caller must be able to expand
+// the result without knowing which case it got. The bash this replaces kept
+// "$remote_sha --not --remotes" in one variable and relied on leaving it
+// unquoted to split — which would have split any other whitespace too.
+func (p Push) RevListArgs() []string {
 	if isZero(p.LocalSHA) {
 		// Deleting a branch publishes no commits.
 		return nil
@@ -131,9 +133,9 @@ func Offenders(commits []Commit, allowed []string) []Commit {
 	return bad
 }
 
-// Emails lists the distinct author addresses of the given commits, in the order
-// they first appear — what "allow always" needs to record.
-func Emails(commits []Commit) []string {
+// DistinctAuthorEmails lists each author address once, in the order it first
+// appears — what "allow always" needs to record.
+func DistinctAuthorEmails(commits []Commit) []string {
 	seen := map[string]bool{}
 
 	var emails []string

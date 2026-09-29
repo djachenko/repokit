@@ -40,8 +40,8 @@ func authorRanges(args []string) {
 	}
 
 	for _, push := range pushes {
-		if rng := push.Range(); rng != nil {
-			fmt.Println(strings.Join(rng, "\t"))
+		if args := push.RevListArgs(); args != nil {
+			fmt.Println(strings.Join(args, "\t"))
 		}
 	}
 }

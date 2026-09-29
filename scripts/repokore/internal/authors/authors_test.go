@@ -8,14 +8,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	zero40 = "0000000000000000000000000000000000000000"
-	zero64 = "0000000000000000000000000000000000000000000000000000000000000000"
+// The all-zero SHA git sends for a ref that does not exist, at both hash
+// lengths git supports.
+var (
+	zero40 = strings.Repeat("0", 40)
+	zero64 = strings.Repeat("0", 64)
 )
 
 // ── the pre-push protocol ─────────────────────────────────────────────────────
 
-func TestParsePush(t *testing.T) {
+func TestParsePush_ReadsAllFourFields(t *testing.T) {
 	got, err := ParsePush(strings.NewReader(
 		"refs/heads/main abc123 refs/heads/main def456\n" +
 			"refs/heads/topic aaa111 refs/heads/topic " + zero40 + "\n"))
@@ -32,44 +34,44 @@ func TestParsePush_MalformedLine_IsAnError(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestRange_ExistingBranch(t *testing.T) {
+func TestRevListArgs_ExistingBranch(t *testing.T) {
 	p := Push{LocalSHA: "def456", RemoteSHA: "abc123"}
 
-	assert.Equal(t, []string{"abc123..def456"}, p.Range())
+	assert.Equal(t, []string{"abc123..def456"}, p.RevListArgs())
 }
 
-func TestRange_NewBranch(t *testing.T) {
+func TestRevListArgs_NewBranch(t *testing.T) {
 	p := Push{LocalSHA: "def456", RemoteSHA: zero40}
 
-	assert.Equal(t, []string{"def456", "--not", "--remotes"}, p.Range())
+	assert.Equal(t, []string{"def456", "--not", "--remotes"}, p.RevListArgs())
 }
 
 // Deleting a branch publishes nothing, so there is nothing to check. The
 // installed hook that predates this guard aborts the push instead.
-func TestRange_Deletion_IsNothingToCheck(t *testing.T) {
+func TestRevListArgs_Deletion_IsNothingToCheck(t *testing.T) {
 	p := Push{LocalSHA: zero40, RemoteSHA: "abc123"}
 
-	assert.Nil(t, p.Range())
+	assert.Nil(t, p.RevListArgs())
 }
 
 // SHA-256 repositories use the same marker at twice the length; matching on a
 // 40-character literal would have missed it.
-func TestRange_Sha256Zero(t *testing.T) {
-	assert.Nil(t, Push{LocalSHA: zero64, RemoteSHA: "abc"}.Range())
+func TestRevListArgs_Sha256Zero(t *testing.T) {
+	assert.Nil(t, Push{LocalSHA: zero64, RemoteSHA: "abc"}.RevListArgs())
 	assert.Equal(t, []string{"def", "--not", "--remotes"},
-		Push{LocalSHA: "def", RemoteSHA: zero64}.Range())
+		Push{LocalSHA: "def", RemoteSHA: zero64}.RevListArgs())
 }
 
 // A hash that merely begins with zeros is a real commit.
-func TestRange_LeadingZeroHash_IsNotTheZeroSHA(t *testing.T) {
+func TestRevListArgs_LeadingZeroHash_IsNotTheZeroSHA(t *testing.T) {
 	p := Push{LocalSHA: "0001234", RemoteSHA: "abc123"}
 
-	assert.Equal(t, []string{"abc123..0001234"}, p.Range())
+	assert.Equal(t, []string{"abc123..0001234"}, p.RevListArgs())
 }
 
 // ── git log ───────────────────────────────────────────────────────────────────
 
-func TestParseLog(t *testing.T) {
+func TestParseLog_SplitsHashEmailAndSubject(t *testing.T) {
 	got, err := ParseLog(strings.NewReader(
 		"abc123 igor@example.com feat: add thing\n" +
 			"def456 other@example.com fix: correct it\n"))
@@ -112,7 +114,7 @@ var commits = []Commit{
 	{"c3", "repokit@djachenko", "three"},
 }
 
-func TestOffenders(t *testing.T) {
+func TestOffenders_KeepsOnlyUnknownAuthors(t *testing.T) {
 	bad := Offenders(commits, []string{"igor@example.com", "repokit@djachenko"})
 
 	assert.Equal(t, []Commit{{"b2", "stranger@example.com", "two"}}, bad)
@@ -136,8 +138,8 @@ func TestOffenders_EmptyAllowedEntryPermitsNothing(t *testing.T) {
 	assert.Len(t, bad, 1)
 }
 
-func TestEmails_DistinctInFirstSeenOrder(t *testing.T) {
-	got := Emails([]Commit{
+func TestDistinctAuthorEmails_InFirstSeenOrder(t *testing.T) {
+	got := DistinctAuthorEmails([]Commit{
 		{"a", "second@example.com", ""},
 		{"b", "first@example.com", ""},
 		{"c", "second@example.com", ""},
