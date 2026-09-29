@@ -2,6 +2,60 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.11.0 - 2026-09-29
+#### Features
+- report each tool check as it passes - (d994b8b) - Igor Djachenko
+- require repokore instead of degrading without it - (665bee8) - Igor Djachenko
+- build Go binary in CI, download in install.sh, drop Python dependency - (4699226) - Igor Djachenko
+- smart merge pyproject.toml via Go binary - (d8f301d) - Igor Djachenko
+#### Bug Fixes
+- use an upload-artifact version that exists - (b5ab609) - Igor Djachenko
+- name the dotfiles repo in adopt's messages - (b26b601) - Igor Djachenko
+- pass non-ASCII and renamed paths through the auto-commit - (519d365) - Igor Djachenko
+- make the dotfiles step reachable and keep its scripts current - (66b1a51) - Igor Djachenko
+- don't commit when pyproject needs no change - (b7db6b2) - Igor Djachenko
+- publish a release only once its binaries are in - (166bfbb) - Igor Djachenko
+- explain adopt's errors and check its argument before using it - (cfa4565) - Igor Djachenko
+- upload the binaries go-release actually builds - (4c08971) - Igor Djachenko
+- detect non-TTY stdin in repokore instead of bash - (6ae3071) - Igor Djachenko
+- download repokore before replacing the install dir - (66ce074) - Igor Djachenko
+- preserve pyproject.toml key order, replace flaky order test - (2533136) - Igor Djachenko
+- normalise aarch64 arch name, remove BSD-only sed from install.sh - (6a06195) - Igor Djachenko
+- shfmt -d in pre-commit, warn on hooksPath conflict, safe uninstall - (5f58324) - Igor Djachenko
+#### Documentation
+- CLAUDE.md under repokore sync, repokore-env and the draft release - (ac87b23) - Igor Djachenko
+- record repokore's commands and the execution boundary - (cfae18b) - Igor Djachenko
+- record the Go binary and repokit's own CI in the project guide - (b4dd800) - Igor Djachenko
+#### Continuous Integration
+- call repokit's own workflows by local path - (2eda59c) - Igor Djachenko
+- collect shell scripts with a script instead of inline - (5605467) - Igor Djachenko
+- lint every shell script, found by shebang - (1c28533) - Igor Djachenko
+- run Go tests on push, not only at release - (1208dbc) - Igor Djachenko
+#### Refactoring
+- clearer names in the authors package - (14ef4a6) - Igor Djachenko
+- write managed files through repokore sync - (a312051) - Igor Djachenko
+- locate repokore in one sourced script - (0de0d77) - Igor Djachenko
+- move dotfiles tooling lists and the plist out of the scripts - (9ab10d4) - Igor Djachenko
+- locate repokore next to the hook's real path - (95af11c) - Igor Djachenko
+- group dotfiles changes in repokore - (2bcaebd) - Igor Djachenko
+- parse the pre-push protocol in repokore - (b3b86e5) - Igor Djachenko
+- manage .gitignore entries in repokore - (e52102e) - Igor Djachenko
+- derive ruleset check contexts in repokore - (20cdcce) - Igor Djachenko
+- split repokore into packages and edit TOML losslessly - (e99fd6a) - Igor Djachenko
+- allow overriding repokore path for tests - (b0a3e00) - Igor Djachenko
+- rename merge_pyproject to repokore, add subcommand dispatcher - (8c6a5fe) - Igor Djachenko
+- build Go binary before release so a failed build blocks publish - (af2a53e) - Igor Djachenko
+- go-release builds artifact, release.yml uploads to GitHub release - (f25db89) - Igor Djachenko
+- move Go binary CI into separate go-release.yml workflow - (9034080) - Igor Djachenko
+- symlink pre-push hook instead of copying - (58ba49e) - Igor Djachenko
+- install pre-push hook locally per-repo, remove global hooksPath - (a595081) - Igor Djachenko
+- remove pre-commit hook, linting is on-demand not automatic - (f81d578) - Igor Djachenko
+#### Style
+- shfmt the shell files that had no linting - (d6b4416) - Igor Djachenko
+- drop blank line left by removing the global hooks block - (62ae5c8) - Igor Djachenko
+
+- - -
+
 ## 0.10.11 - 2026-07-29
 #### Bug Fixes
 - read bypass actor id from .repokit, not hardcoded - (b1b460d) - Igor Djachenko
