@@ -30,6 +30,8 @@ func main() {
 		commands.MergePyproject(args)
 	case "render-template":
 		commands.RenderTemplate(args)
+	case "sync":
+		commands.Sync(args)
 	case "config":
 		commands.Config(args)
 	case "ruleset-checks":
@@ -51,7 +53,8 @@ func usage() {
 	fmt.Fprintln(os.Stderr, "")
 	fmt.Fprintln(os.Stderr, "commands:")
 	fmt.Fprintln(os.Stderr, "  merge-pyproject [--non-interactive] --repo R --owner O [--state F] <template> <target>")
-	fmt.Fprintln(os.Stderr, "  render-template --repo R [--owner O] [--version V] [--state F] [--out F] <template>")
+	fmt.Fprintln(os.Stderr, "  render-template [--repo R] [--owner O] [--version V] [--set K=V]... [--state F] [--out F] <template>")
+	fmt.Fprintln(os.Stderr, "  sync [--force] [--skip-hint H] [--repo R] [--owner O] [--version V] [--set K=V]... <template> <dest>")
 	fmt.Fprintln(os.Stderr, "  config get [--file F] <key>")
 	fmt.Fprintln(os.Stderr, "  config set [--file F] <key> <value>")
 	fmt.Fprintln(os.Stderr, "  ruleset-checks [--reusable DIR] <workflow.yml>...")

@@ -16,22 +16,16 @@ import (
 // --force-pyproject.
 func RenderTemplate(args []string) {
 	fs := flag.NewFlagSet("render-template", flag.ExitOnError)
-	repo := fs.String("repo", "", "value for {{REPO}}")
-	owner := fs.String("owner", "", "value for {{OWNER}}")
-	version := fs.String("version", "", "repokit version; {{VERSION}} gets its major.minor")
+	vars := templateVars(fs)
 	statePath := fs.String("state", "", "file to record template_hash in; empty to skip")
 	out := fs.String("out", "", "file to write; empty for stdout")
 
-	parse(fs, args, 1, "render-template --repo R [--owner O] [--version V] [--state F] [--out F] <template>")
+	parse(fs, args, 1, "render-template [--repo R] [--owner O] [--version V] [--set K=V]... [--state F] [--out F] <template>")
 
 	// Rendering before opening the output: a shell redirect would have
 	// truncated the user's file before we knew whether we had anything to put
 	// in it.
-	rendered, err := template.RenderFile(fs.Arg(0), map[string]string{
-		"REPO":    *repo,
-		"OWNER":   *owner,
-		"VERSION": template.MajorMinor(*version),
-	})
+	rendered, err := template.RenderFile(fs.Arg(0), vars())
 	if err != nil {
 		fail("error reading template: %v", err)
 	}
