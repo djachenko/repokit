@@ -1,0 +1,4 @@
+# `# shellcheck source=…` paths are written relative to the script that holds
+# them. Without this, shellcheck resolves them against the directory it was
+# started from — the repo root in CI — misses every one, and reports SC1091.
+source-path=SCRIPTDIR
