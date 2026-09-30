@@ -40,7 +40,7 @@ func authorRanges(args []string) {
 	}
 
 	for _, push := range pushes {
-		if args := push.RevListArgs(); args != nil {
+		if args := push.CommitRange(); args != nil {
 			fmt.Println(strings.Join(args, "\t"))
 		}
 	}
