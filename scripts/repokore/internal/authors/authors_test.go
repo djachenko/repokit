@@ -137,13 +137,3 @@ func TestOffenders_EmptyAllowedEntryPermitsNothing(t *testing.T) {
 
 	assert.Len(t, bad, 1)
 }
-
-func TestDistinctAuthorEmails_InFirstSeenOrder(t *testing.T) {
-	got := DistinctAuthorEmails([]Commit{
-		{"a", "second@example.com", ""},
-		{"b", "first@example.com", ""},
-		{"c", "second@example.com", ""},
-	})
-
-	assert.Equal(t, []string{"second@example.com", "first@example.com"}, got)
-}

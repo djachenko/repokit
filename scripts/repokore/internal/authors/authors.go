@@ -132,21 +132,3 @@ func Offenders(commits []Commit, allowed []string) []Commit {
 
 	return bad
 }
-
-// DistinctAuthorEmails lists each author address once, in the order it first
-// appears — what "allow always" needs to record.
-func DistinctAuthorEmails(commits []Commit) []string {
-	seen := map[string]bool{}
-
-	var emails []string
-
-	for _, commit := range commits {
-		if !seen[commit.Email] {
-			seen[commit.Email] = true
-
-			emails = append(emails, commit.Email)
-		}
-	}
-
-	return emails
-}
