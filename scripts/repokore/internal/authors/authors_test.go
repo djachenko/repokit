@@ -34,39 +34,39 @@ func TestParsePush_MalformedLine_IsAnError(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestRevListArgs_ExistingBranch(t *testing.T) {
+func TestCommitRange_ExistingBranch(t *testing.T) {
 	p := Push{LocalSHA: "def456", RemoteSHA: "abc123"}
 
-	assert.Equal(t, []string{"abc123..def456"}, p.RevListArgs())
+	assert.Equal(t, []string{"abc123..def456"}, p.CommitRange())
 }
 
-func TestRevListArgs_NewBranch(t *testing.T) {
+func TestCommitRange_NewBranch(t *testing.T) {
 	p := Push{LocalSHA: "def456", RemoteSHA: zero40}
 
-	assert.Equal(t, []string{"def456", "--not", "--remotes"}, p.RevListArgs())
+	assert.Equal(t, []string{"def456", "--not", "--remotes"}, p.CommitRange())
 }
 
 // Deleting a branch publishes nothing, so there is nothing to check. The
 // installed hook that predates this guard aborts the push instead.
-func TestRevListArgs_Deletion_IsNothingToCheck(t *testing.T) {
+func TestCommitRange_Deletion_IsNothingToCheck(t *testing.T) {
 	p := Push{LocalSHA: zero40, RemoteSHA: "abc123"}
 
-	assert.Nil(t, p.RevListArgs())
+	assert.Nil(t, p.CommitRange())
 }
 
 // SHA-256 repositories use the same marker at twice the length; matching on a
 // 40-character literal would have missed it.
-func TestRevListArgs_Sha256Zero(t *testing.T) {
-	assert.Nil(t, Push{LocalSHA: zero64, RemoteSHA: "abc"}.RevListArgs())
+func TestCommitRange_Sha256Zero(t *testing.T) {
+	assert.Nil(t, Push{LocalSHA: zero64, RemoteSHA: "abc"}.CommitRange())
 	assert.Equal(t, []string{"def", "--not", "--remotes"},
-		Push{LocalSHA: "def", RemoteSHA: zero64}.RevListArgs())
+		Push{LocalSHA: "def", RemoteSHA: zero64}.CommitRange())
 }
 
 // A hash that merely begins with zeros is a real commit.
-func TestRevListArgs_LeadingZeroHash_IsNotTheZeroSHA(t *testing.T) {
+func TestCommitRange_LeadingZeroHash_IsNotTheZeroSHA(t *testing.T) {
 	p := Push{LocalSHA: "0001234", RemoteSHA: "abc123"}
 
-	assert.Equal(t, []string{"abc123..0001234"}, p.RevListArgs())
+	assert.Equal(t, []string{"abc123..0001234"}, p.CommitRange())
 }
 
 // ── git log ───────────────────────────────────────────────────────────────────

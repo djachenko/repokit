@@ -28,7 +28,7 @@ type Push struct {
 	RemoteSHA string
 }
 
-// RevListArgs returns the arguments naming the commits this push would add, to
+// CommitRange returns the arguments naming the commits this push would add, to
 // be passed to `git rev-list` or `git log`, or nil when there is nothing to
 // check.
 //
@@ -37,7 +37,7 @@ type Push struct {
 // the result without knowing which case it got. The bash this replaces kept
 // "$remote_sha --not --remotes" in one variable and relied on leaving it
 // unquoted to split — which would have split any other whitespace too.
-func (p Push) RevListArgs() []string {
+func (p Push) CommitRange() []string {
 	if isZero(p.LocalSHA) {
 		// Deleting a branch publishes no commits.
 		return nil
