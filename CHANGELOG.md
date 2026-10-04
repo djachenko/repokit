@@ -2,6 +2,15 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.11.1 - 2026-10-04
+#### Bug Fixes
+- resolve pre-push hook path via git rev-parse - (9598c2e) - Igor Djachenko
+#### Refactoring
+- rename RevListArgs to CommitRange - (5111fab) - Igor Djachenko
+- remove unused DistinctAuthorEmails - (f386afa) - Igor Djachenko
+
+- - -
+
 ## 0.11.0 - 2026-09-29
 #### Features
 - report each tool check as it passes - (d994b8b) - Igor Djachenko
