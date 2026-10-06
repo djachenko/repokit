@@ -29,6 +29,11 @@ repokit/
 │   └── 08_branch_push.sh          # пушит ветку, открывает PR
 ├── hooks/
 │   └── pre-push                   # проверка author email, парсинг через repokore
+├── tests/                         # bats: шаги и language setup на настоящих git + repokore
+│   ├── helpers.bash               # окружение оркестратора, функции берутся из самого repokit
+│   ├── bin/                       # шимы gh и launchctl, кладутся в PATH
+│   │   └── install/               # шимы curl и uname — только для install.bats
+│   └── *.bats
 ├── scripts/
 │   ├── shell-files                # список shell-скриптов по shebang — для линта в CI и руками
 │   ├── repokore-env               # sourced: находит бинарь, экспортирует $REPOKORE, падает если нет
@@ -148,7 +153,9 @@ Merge правит текст поверх lossless AST, а не парсит в
 
 Выше описано то, что уезжает в клиентские репо. У самого repokit схема своя:
 
-**tests.yml** — push на любую ветку → `bash-tests.yml` (shellcheck + shfmt) и `go-tests.yml` (gofmt + vet + test) двумя параллельными джобами. Go-тесты стоят здесь, а не только в релизе: иначе сломанный бинарь блокирует релиз уже после мержа, вместо того чтобы блокировать PR.
+**tests.yml** — push на любую ветку → `bash-tests.yml` (shellcheck + shfmt), `go-tests.yml` (gofmt + vet + test) и `bats` тремя параллельными джобами. `bats` — инлайном, не в `bash-tests.yml`: тот зовут и клиентские bash-репо, где нет ни `tests/`, ни исходников repokore. Go-тесты стоят здесь, а не только в релизе: иначе сломанный бинарь блокирует релиз уже после мержа, вместо того чтобы блокировать PR.
+
+bats-тесты гоняют шаги так же, как оркестратор (`run_step` — `source`, language setup — `bash`), на настоящем git с bare-origin и **настоящем** repokore: шов bash ↔ repokore (коды выхода, вывод) Go-тесты не видят. Локально: собрать бинарь (см. выше), затем `bats tests/`.
 
 Свои reusable workflow repokit зовёт **локальным путём** `./.github/workflows/…`, не `…@master`: так ветка проверяется своими же правилами, а не master'скими. `@версия` — только в том, что уезжает в клиентские репо.
 
