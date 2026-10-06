@@ -29,7 +29,9 @@ ruleset_body() {
 @test "01 reports each check as it passes" {
   run steps 01_check_tools.sh
   [ "$status" -eq 0 ]
-  [[ "$output" == *"✓ git"*"✓ gh"*"✓ gh auth"* ]]
+  output_has "✓ git"
+  output_has "✓ gh"
+  output_has "✓ gh auth"
 }
 
 # PATH narrowed inside the call, not as `PATH=… run`: run itself needs the
@@ -44,7 +46,7 @@ with_path() {
 @test "01 stops when git is missing" {
   run with_path "$BATS_TEST_DIRNAME/bin" steps 01_check_tools.sh
   [ "$status" -eq 1 ]
-  [[ "$output" == *"✗ git not found"* ]]
+  output_has "✗ git not found"
 }
 
 @test "01 stops when gh is missing" {
@@ -53,13 +55,13 @@ with_path() {
 
   run with_path "$BATS_TEST_TMPDIR/no-gh" steps 01_check_tools.sh
   [ "$status" -eq 1 ]
-  [[ "$output" == *"✗ gh not found"* ]]
+  output_has "✗ gh not found"
 }
 
 @test "01 stops when gh is not logged in" {
   GH_EXIT_CODE=1 run steps 01_check_tools.sh
   [ "$status" -eq 1 ]
-  [[ "$output" == *"gh auth login"* ]]
+  output_has "gh auth login"
 }
 
 # ── 05_branch_prepare ────────────────────────────────────────────────────────
@@ -76,7 +78,7 @@ with_path() {
 
   run steps 05_branch_prepare.sh
   [ "$status" -eq 1 ]
-  [[ "$output" == *"branch feature is not on origin"* ]]
+  output_has "branch feature is not on origin"
 }
 
 @test "05 rebases an existing setup branch onto the base branch" {
@@ -182,6 +184,6 @@ with_path() {
   run steps 05_branch_prepare.sh 08_branch_push.sh
   [ "$status" -eq 0 ]
 
-  [[ "$output" == *"Already up to date"* ]]
+  output_has "Already up to date"
   [ ! -f "$GH_CALLS_LOG" ]
 }

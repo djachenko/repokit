@@ -33,7 +33,7 @@ foreign_commit() {
 
   run git push origin master
   [ "$status" -ne 0 ]
-  [[ "$output" == *"<stranger@example.com> chore: foreign"* ]]
+  output_has "<stranger@example.com> chore: foreign"
   [ "$(git rev-parse origin/master)" != "$(git rev-parse master)" ]
 }
 

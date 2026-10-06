@@ -63,7 +63,7 @@ repokit() {
 
   run "$install/repokit" --language python
   [ "$status" -eq 1 ]
-  [[ "$output" == *"repokore not found"* ]]
+  output_has "repokore not found"
   [ "$(git rev-parse HEAD)" = "$before" ]
   [ ! -e .repokit ]
 }

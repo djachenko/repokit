@@ -62,6 +62,16 @@ setup_repo() {
   git push -q -u origin master
 }
 
+# Not a bare [[ … ]] in the test: on bash 3.2, macOS's, a false [[ ]] in the
+# middle of a test does not fail it — such an assertion passes whatever the
+# output. A function returning non-zero fails it on every bash.
+output_has() {
+  [[ "$output" == *"$1"* ]] || {
+    echo "output lacks: $1"
+    return 1
+  }
+}
+
 commit_count() {
   git rev-list --count HEAD
 }

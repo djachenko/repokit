@@ -48,7 +48,7 @@ install_repokit() {
 
   run install_repokit
   [ "$status" -eq 0 ]
-  [[ "$output" == *"Updated: repokit v1.0.0 → v1.1.0"* ]]
+  output_has "Updated: repokit v1.0.0 → v1.1.0"
   [ "$(cat "$INSTALL_DIR/VERSION")" = v1.1.0 ]
   [ "$(grep -c 'repokit/shell.sh' "$HOME/.zshrc")" -eq 1 ]
 }
@@ -59,7 +59,7 @@ install_repokit() {
 
   run install_repokit
   [ "$status" -eq 0 ]
-  [[ "$output" == *"Already up to date"* ]]
+  output_has "Already up to date"
   [ "$(grep -vc '/releases/latest$' "$CURL_CALLS_LOG")" -eq 0 ]
 }
 
@@ -84,7 +84,7 @@ install_repokit() {
 
   FAKE_NO_BINARY=1 run install_repokit
   [ "$status" -eq 1 ]
-  [[ "$output" == *"Could not download repokore for linux/amd64"* ]]
+  output_has "Could not download repokore for linux/amd64"
   [ "$(cat "$INSTALL_DIR/VERSION")" = v1.0.0 ]
   [ -x "$INSTALL_DIR/bin/repokore" ]
 }

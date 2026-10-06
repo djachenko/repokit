@@ -73,7 +73,7 @@ dotfiles_setup() {
   run dotfiles_setup
   [ "$status" -eq 0 ]
   [ "$(cat install)" = "# mine" ]
-  [[ "$output" == *"delete it and re-run"* ]]
+  output_has "delete it and re-run"
 }
 
 # install links the repo into $HOME. The tooling lives in the repo but is not
@@ -151,7 +151,7 @@ adopt_setup() {
 
   run ./adopt
   [ "$status" -eq 1 ]
-  [[ "$output" == *"Usage: adopt <file>"* ]]
+  output_has "Usage: adopt <file>"
 }
 
 @test "adopt refuses a file outside HOME" {
@@ -160,7 +160,7 @@ adopt_setup() {
 
   run ./adopt "$BATS_TEST_TMPDIR/elsewhere"
   [ "$status" -eq 1 ]
-  [[ "$output" == *"is outside \$HOME"* ]]
+  output_has "is outside \$HOME"
   [ -f "$BATS_TEST_TMPDIR/elsewhere" ]
 }
 
@@ -170,7 +170,7 @@ adopt_setup() {
 
   run ./adopt "$HOME/.config/app/conf"
   [ "$status" -eq 1 ]
-  [[ "$output" == *"already a symlink"* ]]
+  output_has "already a symlink"
 }
 
 @test "adopt does not overwrite what the repo already has" {
@@ -180,7 +180,7 @@ adopt_setup() {
 
   run ./adopt "$HOME/.config/app/conf"
   [ "$status" -eq 1 ]
-  [[ "$output" == *"already exists"* ]]
+  output_has "already exists"
   [ "$(cat .config/app/conf)" = repo ]
   [ ! -L "$HOME/.config/app/conf" ]
 }
