@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# Stands in for curl in install.sh: GitHub is answered from the test's own
+# files. Each URL asked for is appended to $CURL_CALLS_LOG.
+#   the /releases/latest probe  → a tag URL for $FAKE_VERSION
+#   the source tarball          → $FAKE_TARBALL on stdout
+#   the binary (-o <file>)      → a stub written to <file>, or exit 22 (curl's
+#                                 code for an HTTP error) when $FAKE_NO_BINARY
+
+url=""
+out=""
+head=false
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+  -o | -w)
+    [[ "$1" == -o ]] && out="$2"
+    shift
+    ;;
+  -*I*) head=true ;;
+  -*) ;;
+  *) url="$1" ;;
+  esac
+  shift
+done
+echo "$url" >> "$CURL_CALLS_LOG"
+
+if $head; then
+  printf 'https://github.com/djachenko/repokit/releases/tag/%s' "$FAKE_VERSION"
+elif [[ "$url" == *.tar.gz ]]; then
+  cat "$FAKE_TARBALL"
+elif [[ -n "${FAKE_NO_BINARY:-}" ]]; then
+  exit 22
+else
+  printf '#!/bin/sh\n' > "$out"
+fi

@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# Stands in for uname, so one machine can play every platform install.sh maps.
+
+if [[ "$1" == -m ]]; then
+  echo "$FAKE_ARCH"
+else
+  echo "$FAKE_OS"
+fi
