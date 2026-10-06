@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.11.2 - 2026-10-06
+#### Bug Fixes
+- explain when the base branch is missing on origin - (b32aa4f) - Igor Djachenko
+
+- - -
+
 ## 0.11.1 - 2026-10-04
 #### Bug Fixes
 - resolve pre-push hook path via git rev-parse - (9598c2e) - Igor Djachenko
