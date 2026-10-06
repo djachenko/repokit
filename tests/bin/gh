@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# Stands in for gh: no network, no real repositories. Every call is appended to
+# $GH_CALLS_LOG so a test can check what was sent, not only that something was.
+# The reply is the file named after the first argument (api, pr, repo…) in
+# $GH_RESPONSE_DIR, if there is one; the exit code is $GH_EXIT_CODE.
+
+{
+  printf '=== gh %s\n' "$*"
+  # The body of `gh api --input -` arrives on stdin. Read it only then: an
+  # unconditional cat would hang on any call whose stdin is left open.
+  for arg in "$@"; do
+    if [[ "$arg" == --input ]]; then
+      cat
+    fi
+  done
+} >> "$GH_CALLS_LOG"
+
+if [[ -f "$GH_RESPONSE_DIR/$1" ]]; then
+  cat "$GH_RESPONSE_DIR/$1"
+fi
+
+exit "${GH_EXIT_CODE:-0}"

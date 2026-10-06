@@ -20,3 +20,28 @@ jobs:
 
   go-tests:
     uses: ./.github/workflows/go-tests.yml
+
+  # Inline, not in bash-tests.yml: that one is also called by client repos,
+  # which have neither tests/ nor repokore's sources.
+  bats:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      # The tests run the steps with the real repokore, the way the
+      # orchestrator does; scripts/repokore-env looks for it in bin/.
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: scripts/repokore/go.mod
+          cache-dependency-path: scripts/repokore/go.sum
+
+      - name: Build repokore
+        working-directory: scripts/repokore
+        run: go build -o ../../bin/repokore .
+
+      - name: Install bats
+        run: sudo apt-get install -y bats
+
+      - name: bats
+        run: bats tests/

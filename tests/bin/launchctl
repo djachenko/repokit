@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# Stands in for launchctl: the Linux runner has none, and a test must not load
+# a real agent on a Mac. Calls are logged the same way the gh shim logs them.
+
+printf '=== launchctl %s\n' "$*" >> "$LAUNCHCTL_CALLS_LOG"
