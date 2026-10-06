@@ -31,14 +31,16 @@ repokit() {
   grep -q '^=== gh pr create .* --base master$' "$GH_CALLS_LOG"
 }
 
+# While the setup PR is open the branch is still ahead of master, so the run
+# pushes again — the same commits, which leaves origin as it was.
 @test "a re-run with nothing new changes nothing" {
   repokit --language python
   before=$(git rev-parse HEAD)
 
   run repokit
   [ "$status" -eq 0 ]
-  [[ "$output" == *"Already up to date"* ]]
   [ "$(git rev-parse HEAD)" = "$before" ]
+  [ "$(git ls-remote origin refs/heads/chore/repokit-setup | cut -f1)" = "$before" ]
 }
 
 # In a worktree .git is a file, not a directory; hooks live in the main repo.
