@@ -2,6 +2,23 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.11.3 - 2026-10-06
+#### Bug Fixes
+- create the install dir's parent on a fresh machine - (98faa7d) - Igor Djachenko
+#### Documentation
+- describe the bats suite in the project guide - (2a47e9c) - Igor Djachenko
+#### Tests
+- expect a re-run to re-push the open setup branch unchanged - (a5e902c) - Igor Djachenko
+- make output assertions fail on bash 3.2 - (2b285b8) - Igor Djachenko
+- add the gh, launchctl, curl and uname shims - (e5eaa92) - Igor Djachenko
+- cover steps, hook, orchestrator and install.sh with bats - (9e0bfb2) - Igor Djachenko
+#### Continuous Integration
+- run the bats suite on every push - (db9ae9a) - Igor Djachenko
+#### Miscellaneous Chores
+- ignore only the root bin/, not tests/bin - (290e3cd) - Igor Djachenko
+
+- - -
+
 ## 0.11.2 - 2026-10-06
 #### Bug Fixes
 - explain when the base branch is missing on origin - (b32aa4f) - Igor Djachenko
