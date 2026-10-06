@@ -60,6 +60,11 @@ fi
 
 echo "Installing to $INSTALL_DIR..."
 
+# mv does not create the destination's parent, and a fresh machine may have no
+# ~/.local/share yet. -p = create missing parents, no error if they exist.
+# Before the old install is moved aside, so a failure here leaves it in place.
+mkdir -p "$(dirname "$INSTALL_DIR")"
+
 # Move old install dir aside so we can restore it if the new install fails.
 BAK="$INSTALL_DIR.bak"
 rm -rf "$BAK"
