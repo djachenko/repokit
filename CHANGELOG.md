@@ -2,6 +2,16 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.12.0 - 2026-10-07
+#### Features
+- add swift language for SwiftPM packages - (734cd87) - Igor Djachenko
+#### Bug Fixes
+- drop floating tags from the swift release - (e0130c1) - Igor Djachenko
+#### Tests
+- cover swift language setup and the SwiftLint config chain - (9be801e) - Igor Djachenko
+
+- - -
+
 ## 0.11.3 - 2026-10-06
 #### Bug Fixes
 - create the install dir's parent on a fresh machine - (98faa7d) - Igor Djachenko
