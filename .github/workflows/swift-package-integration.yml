@@ -5,7 +5,7 @@ on:
 
 jobs:
   build-ios:
-    runs-on: macos-15
+    runs-on: macos-latest
     # A new push to the PR makes the run on the previous one pointless.
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}

@@ -7,7 +7,7 @@ jobs:
   test:
     # The package declares macOS among its platforms, and swift test builds for
     # the host — so the host has to be a Mac.
-    runs-on: macos-15
+    runs-on: macos-latest
 
     steps:
       - uses: actions/checkout@v6

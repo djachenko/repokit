@@ -4,6 +4,10 @@
 # No strict: here — SwiftLint does not inherit it through parent_config, only
 # the rules. It lives in .swiftlint.yml.
 
+# SwiftPM checkouts of a local package's dependencies.
+excluded:
+  - "**/.build"
+
 opt_in_rules:
   - empty_count
   - empty_string

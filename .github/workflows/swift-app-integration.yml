@@ -5,7 +5,8 @@ on:
 
 jobs:
   build-ios:
-    runs-on: macos-15
+    # Latest image: an app made in a fresh Xcode uses what older ones lack (string catalog symbols).
+    runs-on: macos-latest
     # A new push to the PR makes the run on the previous one pointless.
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
