@@ -47,7 +47,7 @@ while read -r plan; do
     templates+=("$SHARED/swiftlint_tests.yml")
     destinations+=("$tests_dir/.swiftlint.yml")
   done
-done < <(find "$project_dir" -name '*.xctestplan')
+done < <(find "$project_dir" -name '*.xctestplan' -not -path '*/.build/*')
 
 sync_tooling
 write_lint_config "$project_dir" "$TPL/swiftlint.yml"
