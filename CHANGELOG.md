@@ -2,6 +2,17 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.13.0 - 2026-10-07
+#### Features
+- add swift-app language for iOS apps - (c2cc5a6) - Igor Djachenko
+- <span style="background-color: #d73a49; color: white; padding: 2px 6px; border-radius: 3px; font-weight: bold; font-size: 0.85em;">BREAKING</span>rename the swift language to swift-package - (e4645c6) - Igor Djachenko
+#### Bug Fixes
+- satisfy shellcheck in the swift setups - (6ef4588) - Igor Djachenko
+#### Refactoring
+- share the swift tooling steps between languages - (1144f17) - Igor Djachenko
+
+- - -
+
 ## 0.12.0 - 2026-10-07
 #### Features
 - add swift language for SwiftPM packages - (734cd87) - Igor Djachenko
