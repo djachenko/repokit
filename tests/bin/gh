@@ -4,6 +4,7 @@
 # $GH_CALLS_LOG so a test can check what was sent, not only that something was.
 # The reply is the file named after the first argument (api, pr, repo…) in
 # $GH_RESPONSE_DIR, if there is one; the exit code is $GH_EXIT_CODE.
+# $GH_FAIL names one subcommand ("repo view") that fails while the rest answer.
 
 {
   printf '=== gh %s\n' "$*"
@@ -15,6 +16,10 @@
     fi
   done
 } >> "$GH_CALLS_LOG"
+
+if [[ -n "${GH_FAIL:-}" && "$1 $2" == "$GH_FAIL" ]]; then
+  exit 1
+fi
 
 if [[ -f "$GH_RESPONSE_DIR/$1" ]]; then
   cat "$GH_RESPONSE_DIR/$1"
