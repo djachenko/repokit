@@ -1,0 +1,45 @@
+name: Release
+
+on:
+  workflow_call:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    concurrency: release
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      # A Swift package has no version in any file — SwiftPM reads it from the
+      # tag alone. With nothing to write there is no bump commit, so nothing is
+      # pushed to the protected branch and github.token is enough: the ruleset
+      # covers branches, not tags.
+      - uses: cocogitto/cocogitto-action@v4.2.0
+        with:
+          git-user: repokit
+          git-user-email: repokit@djachenko
+          command: bump
+          args: --auto --disable-bump-commit
+
+      - name: Resolve version
+        id: version
+        run: |
+          VERSION=$(git tag --points-at HEAD | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      # No floating X.Y / X tags, unlike repokit's own release: those exist
+      # because Actions resolves @0.11 by exact name, while SwiftPM resolves
+      # version ranges (from: "0.1.0") from the plain tags by itself.
+      - name: Create GitHub release
+        if: steps.version.outputs.version != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git push origin "refs/tags/${{ steps.version.outputs.version }}"
+          cog changelog "${{ steps.version.outputs.version }}" > /tmp/changelog.md
+          gh release create "${{ steps.version.outputs.version }}" --title "${{ steps.version.outputs.version }}" --notes-file /tmp/changelog.md

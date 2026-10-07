@@ -1,0 +1,14 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    uses: djachenko/repokit/.github/workflows/swift-release.yml@{{VERSION}}
+    secrets: inherit
