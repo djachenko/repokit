@@ -5,7 +5,8 @@ on:
 
 jobs:
   test:
-    runs-on: macos-15
+    # Latest image: an app made in a fresh Xcode uses what older ones lack (string catalog symbols).
+    runs-on: macos-latest
 
     steps:
       - uses: actions/checkout@v6
