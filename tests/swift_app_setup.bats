@@ -101,6 +101,18 @@ EOF
   [ -f App/AppTests/.swiftlint.yml ]
 }
 
+# SwiftPM checks dependencies out with their own test plans, the way Yams
+# lies in photochem — their targets are not the app's.
+@test "a test plan in a SwiftPM checkout is not read" {
+  make_app
+  mkdir -p App/Core/.build/checkouts/Dep/DepTests
+  echo '{ "testTargets" : [ { "target" : { "name" : "DepTests" } } ] }' > App/Core/.build/checkouts/Dep/Dep.xctestplan
+
+  run swift_app_setup
+  [ "$status" -eq 0 ]
+  [ "$(grep -c 'DepTests' <<< "$output")" -eq 0 ]
+}
+
 # Unlike a package, an app commits its pinned dependencies.
 @test "Package.resolved stays tracked, the build folders are ignored" {
   make_app
