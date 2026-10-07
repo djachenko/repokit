@@ -1,0 +1,50 @@
+name: Release
+
+on:
+  workflow_call:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    concurrency: release
+    permissions:
+      contents: write
+
+    steps:
+      # The bump commit goes to the protected base branch: github.token cannot
+      # push it, the App with a bypass in the ruleset can.
+      - uses: actions/create-github-app-token@v3
+        id: app-token
+        with:
+          client-id: ${{ secrets.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+
+      # cog.toml's pre_bump_hooks writes MARKETING_VERSION; cog commits it with
+      # the changelog and tags the commit. --skip-ci: the push of that commit
+      # must not start another release.
+      - uses: cocogitto/cocogitto-action@v4.2.0
+        with:
+          git-user: repokit
+          git-user-email: repokit@djachenko
+          command: bump
+          args: --auto --skip-ci
+
+      - name: Resolve version
+        id: version
+        run: |
+          VERSION=$(git tag --points-at HEAD | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Push and create GitHub release
+        if: steps.version.outputs.version != ''
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          git push origin HEAD:${{ github.ref_name }} "refs/tags/${{ steps.version.outputs.version }}"
+          cog changelog "${{ steps.version.outputs.version }}" > /tmp/changelog.md
+          gh release create "${{ steps.version.outputs.version }}" --title "${{ steps.version.outputs.version }}" --notes-file /tmp/changelog.md

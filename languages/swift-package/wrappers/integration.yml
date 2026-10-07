@@ -1,0 +1,11 @@
+name: Integration
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  integration:
+    uses: djachenko/repokit/.github/workflows/swift-package-integration.yml@{{VERSION}}
+    secrets: inherit

@@ -1,0 +1,47 @@
+name: Tests
+
+on:
+  workflow_call:
+
+jobs:
+  test:
+    runs-on: macos-15
+
+    steps:
+      - uses: actions/checkout@v6
+
+      # Same search as the swift-app language setup: one workspace, else one
+      # project, within two levels. The scheme carries the workspace's name;
+      # its test plan decides which tests run, local packages' included.
+      - name: Find the project
+        id: project
+        run: |
+          project=$(find . -maxdepth 2 -name '*.xcworkspace' -not -name project.xcworkspace)
+          kind=workspace
+          if [[ -z "$project" ]]; then
+            project=$(find . -maxdepth 2 -name '*.xcodeproj')
+            kind=project
+          fi
+          name=$(basename "${project%.*}")
+          echo "dir=$(dirname "$project")" >> $GITHUB_OUTPUT
+          echo "args=-$kind $(basename "$project") -scheme $name" >> $GITHUB_OUTPUT
+
+      # SwiftLint ships with the macOS runner image; brew covers the day it
+      # is dropped from it. Run from the project's folder, where its
+      # .swiftlint.yml is.
+      - name: Lint
+        working-directory: ${{ steps.project.outputs.dir }}
+        run: |
+          which swiftlint || brew install swiftlint
+          swiftlint
+
+      # Whichever iPhone the runner image has: the set changes with the image,
+      # so no model is named. The skip flags stand in for trusting package
+      # plugins and macros in Xcode, which nobody can click on a runner.
+      - name: Test
+        working-directory: ${{ steps.project.outputs.dir }}
+        run: |
+          udid=$(xcrun simctl list devices available -j | jq -r '[.devices[][] | select(.name | startswith("iPhone"))][0].udid')
+          xcodebuild test ${{ steps.project.outputs.args }} \
+            -destination "id=$udid" \
+            -skipPackagePluginValidation -skipMacroValidation
