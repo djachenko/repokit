@@ -1,0 +1,19 @@
+# Required for the release pipeline to work correctly.
+# Without this, merge commits are parsed as conventional commits and
+# may trigger unintended version bumps (e.g. a merge PR bumps minor).
+ignore_merge_commits = true
+
+# An app carries its version in the project: MARKETING_VERSION in every target.
+# cog bump writes it here and puts the change in the bump commit, so the tag
+# and the app's version never part. perl rather than sed -i: the -i syntax
+# differs between macOS and Linux, and this runs on both.
+pre_bump_hooks = [
+  "find . -name project.pbxproj -not -path '*/.build/*' -exec perl -pi -e 's/MARKETING_VERSION = [^;]+;/MARKETING_VERSION = {{version}};/' {} +",
+]
+
+[changelog]
+# By default cocogitto appends commit author names to each changelog entry.
+# An empty list disables this — release notes stay clean when commits come
+# from a mix of humans and bots (e.g. repokit, dependabot).
+# Remove this section to restore the default behaviour.
+authors = []

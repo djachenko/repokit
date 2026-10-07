@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# The release commits MARKETING_VERSION to the protected base branch, which
+# github.token cannot do: it takes a GitHub App with a bypass in the ruleset.
+echo ""
+echo "┌─ Next steps ────────────────────────────────────────────────────────────┐"
+echo "│                                                                          │"
+echo "│  1. Create a GitHub App and install it on the repo:                     │"
+echo "│     https://github.com/settings/apps/new                                │"
+echo "│     Permissions: Contents (write), Metadata (read)                      │"
+echo "│                                                                          │"
+echo "│  2. Add secrets to the repo:                                             │"
+echo "│     https://github.com/$OWNER/$REPO/settings/secrets/actions"
+echo "│     APP_CLIENT_ID  — GitHub App Client ID (Iv1.xxx)                     │"
+echo "│     APP_PRIVATE_KEY — GitHub App private key (.pem)                     │"
+echo "│                                                                          │"
+echo "│  3. Enable App bypass in ruleset:                                        │"
+echo "│     Get your App's numeric ID from https://github.com/settings/apps     │"
+echo "│     Add it to .repokit:  echo 'app_id=<ID>' >> .repokit                 │"
+echo "│     Then re-run repokit to update the ruleset with the bypass.           │"
+echo "│                                                                          │"
+echo "└──────────────────────────────────────────────────────────────────────────┘"

@@ -1,0 +1,6 @@
+parent_config: .swiftlint_base.yml
+
+# Warnings fail the lint, in CI and locally. Set to false while cleaning up a
+# backlog of warnings. It is here and not in the base because SwiftLint does
+# not inherit strict through parent_config.
+strict: true

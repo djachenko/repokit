@@ -61,8 +61,14 @@ repokit/
     │       └── release.yml
     ├── swift-package/             # SPM-пакеты
     │   ├── 06_language_setup.sh   # SwiftLint, cog.toml, Claude skill, gitignore
+    │   ├── tooling.sh             # sourced: шаги sync/lint/gitignore, общие со swift-app
     │   ├── instructions.sh        # строка подключения пакета
     │   ├── templates/             # swiftlint_base/swiftlint/swiftlint_tests, cog.toml, gitignore, skill
+    │   └── wrappers/              # tests.yml, integration.yml, release.yml
+    ├── swift-app/                 # iOS-приложения: xcworkspace или xcodeproj до глубины 2
+    │   ├── 06_language_setup.sh   # база SwiftLint рядом с проектом, тестовый конфиг в папки из test plan
+    │   ├── instructions.sh        # GitHub App: релиз коммитит MARKETING_VERSION в master
+    │   ├── templates/             # cog.toml с хуком MARKETING_VERSION, swiftlint.yml, skill
     │   └── wrappers/              # tests.yml, integration.yml, release.yml
     └── dotfiles/
         ├── 05_branch_prepare.sh   # override: остаётся на master, не переключает ветку
@@ -84,6 +90,9 @@ Reusable workflows (не попадают в клиентские репо):
 ├── swift-package-tests.yml        # swiftlint + swift test на macOS
 ├── swift-package-integration.yml  # xcodebuild build под iOS Simulator
 ├── swift-package-release.yml      # cog bump без коммита + теги, на github.token
+├── swift-app-tests.yml            # swiftlint + xcodebuild test схемы workspace на симуляторе
+├── swift-app-integration.yml      # xcodebuild build под устройство без подписи
+├── swift-app-release.yml          # cog bump с коммитом MARKETING_VERSION, на App token
 ├── bash-tests.yml                 # собственный CI repokit: shellcheck + shfmt
 ├── bash-integration.yml           # заглушка, пока только checkout
 ├── bash-release.yml               # PSR + тег + обновление floating tag в wrappers
@@ -117,10 +126,10 @@ Reusable workflows (не попадают в клиентские репо):
 |---------|-----------|
 | `merge-pyproject` | `06_language_setup.sh` |
 | `render-template` | python `06_language_setup.sh` |
-| `sync` | `06_workflows.sh`, dotfiles и swift-package `06_language_setup.sh` |
+| `sync` | `06_workflows.sh`, dotfiles и swift `tooling.sh` |
 | `config get/set` | оркестратор, `05_branch_prepare.sh`, `07_ruleset.sh` |
 | `ruleset-checks` | `07_ruleset.sh` |
-| `gitignore add/sensitive` | оркестратор, dotfiles и swift-package `06_language_setup.sh` |
+| `gitignore add/sensitive` | оркестратор, dotfiles и swift `tooling.sh` |
 | `check-authors ranges/filter` | `hooks/pre-push` |
 | `group-changes keys/paths/message` | `dotfiles/templates/commit` |
 

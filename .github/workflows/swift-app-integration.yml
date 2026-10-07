@@ -1,0 +1,39 @@
+name: Integration
+
+on:
+  workflow_call:
+
+jobs:
+  build-ios:
+    runs-on: macos-15
+    # A new push to the PR makes the run on the previous one pointless.
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
+
+    steps:
+      - uses: actions/checkout@v6
+
+      # Same search as in swift-app-tests.yml.
+      - name: Find the project
+        id: project
+        run: |
+          project=$(find . -maxdepth 2 -name '*.xcworkspace' -not -name project.xcworkspace)
+          kind=workspace
+          if [[ -z "$project" ]]; then
+            project=$(find . -maxdepth 2 -name '*.xcodeproj')
+            kind=project
+          fi
+          name=$(basename "${project%.*}")
+          echo "dir=$(dirname "$project")" >> $GITHUB_OUTPUT
+          echo "args=-$kind $(basename "$project") -scheme $name" >> $GITHUB_OUTPUT
+
+      # Tests run on the simulator; this catches what only fails to build for
+      # a device. No signing: nothing is shipped from here.
+      - name: Build for iOS
+        working-directory: ${{ steps.project.outputs.dir }}
+        run: |
+          xcodebuild build ${{ steps.project.outputs.args }} \
+            -destination 'generic/platform=iOS' \
+            -skipPackagePluginValidation -skipMacroValidation \
+            CODE_SIGNING_ALLOWED=NO
