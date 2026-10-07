@@ -2,6 +2,13 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.13.1 - 2026-10-07
+#### Bug Fixes
+- exclude SwiftPM checkouts from the shared SwiftLint rules - (63f6240) - Igor Djachenko
+- run the swift workflows on the latest macOS image - (68e59e6) - Igor Djachenko
+
+- - -
+
 ## 0.13.0 - 2026-10-07
 #### Features
 - add swift-app language for iOS apps - (c2cc5a6) - Igor Djachenko
