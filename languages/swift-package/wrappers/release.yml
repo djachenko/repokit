@@ -10,5 +10,5 @@ permissions:
 
 jobs:
   release:
-    uses: djachenko/repokit/.github/workflows/swift-release.yml@{{VERSION}}
+    uses: djachenko/repokit/.github/workflows/swift-package-release.yml@{{VERSION}}
     secrets: inherit

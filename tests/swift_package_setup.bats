@@ -1,18 +1,18 @@
 #!/usr/bin/env bats
 
-# languages/swift/06_language_setup.sh, run with bash — the way the
+# languages/swift-package/06_language_setup.sh, run with bash — the way the
 # orchestrator runs it — against a real repository and the real repokore.
 
 load helpers
 
 setup() {
   setup_repokit_env
-  export LANGUAGE=swift
+  export LANGUAGE=swift-package
   setup_repo
 }
 
 swift_setup() {
-  bash "$SCRIPT_DIR/languages/swift/06_language_setup.sh"
+  bash "$SCRIPT_DIR/languages/swift-package/06_language_setup.sh"
 }
 
 @test "first run writes the tooling and the repo's SwiftLint config as repokit" {

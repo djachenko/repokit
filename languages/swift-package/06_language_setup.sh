@@ -2,7 +2,7 @@
 
 set -e
 
-TPL="$SCRIPT_DIR/languages/swift/templates"
+TPL="$SCRIPT_DIR/languages/swift-package/templates"
 
 echo "→ Writing Swift tooling..."
 
