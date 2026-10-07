@@ -33,7 +33,9 @@ destinations=("$project_dir/.swiftlint_base.yml" cog.toml .claude/skills/repokit
 # the test plans; the folder is named after the target, the way Xcode creates
 # it — the project file is not read for it, its format differs between Xcode
 # versions.
-for plan in $(find "$project_dir" -name '*.xctestplan'); do
+# while read over process substitution rather than a pipe: a pipe would run the
+# loop in a subshell, and the arrays it fills would be lost with it.
+while read -r plan; do
   for target in $(jq -r '.testTargets[].target.name' "$plan"); do
     tests_dir=$(find "$project_dir" -type d -name "$target" -not -path '*/.build/*' | head -1)
 
@@ -45,7 +47,7 @@ for plan in $(find "$project_dir" -name '*.xctestplan'); do
     templates+=("$SHARED/swiftlint_tests.yml")
     destinations+=("$tests_dir/.swiftlint.yml")
   done
-done
+done < <(find "$project_dir" -name '*.xctestplan')
 
 sync_tooling
 write_lint_config "$project_dir" "$TPL/swiftlint.yml"

@@ -9,6 +9,7 @@ written=()
 # Syncs each template in the templates array to the path at the same index in
 # destinations: two plain lists by index, because macOS ships bash 3.2, which
 # has no associative arrays.
+# shellcheck disable=SC2154  # templates and destinations are set by the sourcing setup
 sync_tooling() {
   local i dest wrote
 
