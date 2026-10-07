@@ -59,6 +59,11 @@ repokit/
     │       ├── tests.yml
     │       ├── integration.yml
     │       └── release.yml
+    ├── swift/                     # только SPM-пакеты; приложения (xcodeproj) пока нет
+    │   ├── 06_language_setup.sh   # SwiftLint, cog.toml, Claude skill, gitignore
+    │   ├── instructions.sh        # строка подключения пакета
+    │   ├── templates/             # swiftlint_base/swiftlint/swiftlint_tests, cog.toml, gitignore, skill
+    │   └── wrappers/              # tests.yml, integration.yml, release.yml
     └── dotfiles/
         ├── 05_branch_prepare.sh   # override: остаётся на master, не переключает ветку
         ├── 07_ruleset.sh          # override: пустой — dotfiles коммитит прямо в master
@@ -76,6 +81,9 @@ Reusable workflows (не попадают в клиентские репо):
 ├── python-tests.yml
 ├── python-integration.yml
 ├── python-release.yml
+├── swift-tests.yml                # swiftlint + swift test на macOS
+├── swift-integration.yml          # xcodebuild build под iOS Simulator
+├── swift-release.yml              # cog bump без коммита + теги, на github.token
 ├── bash-tests.yml                 # собственный CI repokit: shellcheck + shfmt
 ├── bash-integration.yml           # заглушка, пока только checkout
 ├── bash-release.yml               # PSR + тег + обновление floating tag в wrappers
@@ -109,10 +117,10 @@ Reusable workflows (не попадают в клиентские репо):
 |---------|-----------|
 | `merge-pyproject` | `06_language_setup.sh` |
 | `render-template` | python `06_language_setup.sh` |
-| `sync` | `06_workflows.sh`, dotfiles `06_language_setup.sh` |
+| `sync` | `06_workflows.sh`, dotfiles и swift `06_language_setup.sh` |
 | `config get/set` | оркестратор, `05_branch_prepare.sh`, `07_ruleset.sh` |
 | `ruleset-checks` | `07_ruleset.sh` |
-| `gitignore add/sensitive` | оркестратор, `dotfiles/06_language_setup.sh` |
+| `gitignore add/sensitive` | оркестратор, dotfiles и swift `06_language_setup.sh` |
 | `check-authors ranges/filter` | `hooks/pre-push` |
 | `group-changes keys/paths/message` | `dotfiles/templates/commit` |
 

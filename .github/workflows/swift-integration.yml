@@ -1,0 +1,24 @@
+name: Integration
+
+on:
+  workflow_call:
+
+jobs:
+  build-ios:
+    runs-on: macos-15
+    # A new push to the PR makes the run on the previous one pointless.
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
+
+    steps:
+      - uses: actions/checkout@v6
+
+      # swift test only builds for the host, so nothing else checks that the
+      # package compiles for iOS. Xcode names the scheme covering every product
+      # of a multi-product package <Name>-Package; a single-product package has
+      # just the one scheme, which is then first.
+      - name: Build for iOS
+        run: |
+          scheme=$(xcodebuild -list -json | jq -r '.workspace.schemes | (map(select(endswith("-Package"))) + .)[0]')
+          xcodebuild build -scheme "$scheme" -destination 'generic/platform=iOS Simulator'

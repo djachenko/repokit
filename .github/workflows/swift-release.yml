@@ -1,0 +1,49 @@
+name: Release
+
+on:
+  workflow_call:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    concurrency: release
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      # A Swift package has no version in any file — SwiftPM reads it from the
+      # tag alone. With nothing to write there is no bump commit, so nothing is
+      # pushed to the protected branch and github.token is enough: the ruleset
+      # covers branches, not tags.
+      - uses: cocogitto/cocogitto-action@v4.2.0
+        with:
+          git-user: repokit
+          git-user-email: repokit@djachenko
+          command: bump
+          args: --auto --disable-bump-commit
+
+      - name: Resolve version
+        id: version
+        run: |
+          VERSION=$(git tag --points-at HEAD | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "minor=$(echo "$VERSION" | cut -d. -f1,2)" >> $GITHUB_OUTPUT
+          echo "major=$(echo "$VERSION" | cut -d. -f1)" >> $GITHUB_OUTPUT
+
+      # The floating minor and major tags let a consumer follow a release line.
+      - name: Create GitHub release
+        if: steps.version.outputs.version != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git tag -f "${{ steps.version.outputs.minor }}"
+          git tag -f "${{ steps.version.outputs.major }}"
+          git push origin "refs/tags/${{ steps.version.outputs.version }}"
+          git push origin "refs/tags/${{ steps.version.outputs.minor }}" --force
+          git push origin "refs/tags/${{ steps.version.outputs.major }}" --force
+          cog changelog "${{ steps.version.outputs.version }}" > /tmp/changelog.md
+          gh release create "${{ steps.version.outputs.version }}" --title "${{ steps.version.outputs.version }}" --notes-file /tmp/changelog.md

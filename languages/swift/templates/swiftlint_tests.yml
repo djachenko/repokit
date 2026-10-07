@@ -1,0 +1,7 @@
+# Nested over the root .swiftlint.yml, for Tests/ only: in a test, !, try! and
+# as! fail the test right where the assumption broke — not a risk to ship.
+
+disabled_rules:
+  - force_unwrapping
+  - force_try
+  - force_cast

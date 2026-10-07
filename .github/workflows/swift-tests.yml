@@ -1,0 +1,24 @@
+name: Tests
+
+on:
+  workflow_call:
+
+jobs:
+  test:
+    # The package declares macOS among its platforms, and swift test builds for
+    # the host — so the host has to be a Mac.
+    runs-on: macos-15
+
+    steps:
+      - uses: actions/checkout@v6
+
+      # SwiftLint ships with the macOS runner image; brew covers the day it
+      # is dropped from it. Strictness comes from the repo's .swiftlint.yml,
+      # not a --strict flag, so a repo can turn it off without a new workflow.
+      - name: Lint
+        run: |
+          which swiftlint || brew install swiftlint
+          swiftlint
+
+      - name: Test
+        run: swift test

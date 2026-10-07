@@ -1,0 +1,14 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - '**'
+      - '!master'
+    tags-ignore:
+      - '**'
+
+jobs:
+  tests:
+    uses: djachenko/repokit/.github/workflows/swift-tests.yml@{{VERSION}}
+    secrets: inherit
