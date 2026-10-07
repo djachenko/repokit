@@ -7,7 +7,7 @@
 - **Редактировать `.github/workflows/*.yml` вручную** — это обёртки над reusable workflow repokit. Менять шаблоны в repokit.
 - **Править `.swiftlint_base.yml`** — общие правила SwiftLint, обновляются из repokit.
 - **Править `Tests/.swiftlint.yml` и `cog.toml`** — тоже repokit.
-- **Ставить и двигать теги руками** — версия пакета существует только как git-тег, в `Package.swift` её нет. Тег ставит release workflow по conventional commits (`fix:` → patch, `feat:` → minor) и двигает плавающие `X.Y` и `X`.
+- **Ставить и двигать теги руками** — версия пакета существует только как git-тег, в `Package.swift` её нет. Тег ставит release workflow по conventional commits (`fix:` → patch, `feat:` → minor).
 
 ## Что можно
 

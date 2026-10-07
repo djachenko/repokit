@@ -31,19 +31,15 @@ jobs:
         run: |
           VERSION=$(git tag --points-at HEAD | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "minor=$(echo "$VERSION" | cut -d. -f1,2)" >> $GITHUB_OUTPUT
-          echo "major=$(echo "$VERSION" | cut -d. -f1)" >> $GITHUB_OUTPUT
 
-      # The floating minor and major tags let a consumer follow a release line.
+      # No floating X.Y / X tags, unlike repokit's own release: those exist
+      # because Actions resolves @0.11 by exact name, while SwiftPM resolves
+      # version ranges (from: "0.1.0") from the plain tags by itself.
       - name: Create GitHub release
         if: steps.version.outputs.version != ''
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          git tag -f "${{ steps.version.outputs.minor }}"
-          git tag -f "${{ steps.version.outputs.major }}"
           git push origin "refs/tags/${{ steps.version.outputs.version }}"
-          git push origin "refs/tags/${{ steps.version.outputs.minor }}" --force
-          git push origin "refs/tags/${{ steps.version.outputs.major }}" --force
           cog changelog "${{ steps.version.outputs.version }}" > /tmp/changelog.md
           gh release create "${{ steps.version.outputs.version }}" --title "${{ steps.version.outputs.version }}" --notes-file /tmp/changelog.md
