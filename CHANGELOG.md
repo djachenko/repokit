@@ -2,6 +2,16 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.14.0 - 2026-10-14
+#### Features
+- enable auto-merge on every repokit run - (06fd9c2) - Igor Djachenko
+#### Tests
+- check auto-merge on new and existing repos - (9d45860) - Igor Djachenko
+#### Refactoring
+- drop the duplicate auto-merge call from repo creation - (20d0e93) - Igor Djachenko
+
+- - -
+
 ## 0.13.2 - 2026-10-14
 #### Bug Fixes
 - fail on empty python matrix with the requires-python bound - (0296407) - Igor Djachenko
