@@ -2,6 +2,22 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.13.2 - 2026-10-14
+#### Bug Fixes
+- fail on empty python matrix with the requires-python bound - (0296407) - Igor Djachenko
+- derive python test matrix from setup-python manifest - (c1f54b5) - Igor Djachenko
+#### Tests
+- check python matrix bounds against requires-python - (be2616c) - Igor Djachenko
+#### Refactoring
+- walrus for requires-python match - (454c5b3) - Igor Djachenko
+- private manifest url and explicit if/else in get_versions - (570e00d) - Igor Djachenko
+#### Miscellaneous Chores
+- require python 3.11 in template - (615f892) - Igor Djachenko
+#### Style
+- one argument per line in merge_bytes_test - (652eac1) - Igor Djachenko
+
+- - -
+
 ## 0.13.1 - 2026-10-07
 #### Bug Fixes
 - exclude SwiftPM checkouts from the shared SwiftLint rules - (63f6240) - Igor Djachenko
