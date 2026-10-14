@@ -73,8 +73,14 @@ func requireDiff(t *testing.T, want, got string, wantAdded, wantRemoved int) {
 		return
 	}
 
-	t.Fatalf("expected +%d/-%d lines, got +%d/-%d\n%s",
-		wantAdded, wantRemoved, added, removed, unified)
+	t.Fatalf(
+		"expected +%d/-%d lines, got +%d/-%d\n%s",
+		wantAdded,
+		wantRemoved,
+		added,
+		removed,
+		unified,
+	)
 }
 
 // The merge's own no-op: same content on both sides, nothing to decide. The
@@ -92,9 +98,12 @@ func TestMergeText_Unchanged_IsByteIdentical(t *testing.T) {
 // file is untouched, including the parts TOML lets you write more than one way.
 func TestMergeText_SingleValueTaken_ChangesOneLine(t *testing.T) {
 	tmpl := templateFixture(t)
-	base := strings.Replace(tmpl,
+	base := strings.Replace(
+		tmpl,
 		`requires-python = ">=3.11"`,
-		`requires-python = ">=3.12"`, 1)
+		`requires-python = ">=3.12"`,
+		1,
+	)
 	require.NotEqual(t, tmpl, base, "fixture must actually differ")
 
 	got, err := answering("t\n").MergeText(base, tmpl)
@@ -106,9 +115,12 @@ func TestMergeText_SingleValueTaken_ChangesOneLine(t *testing.T) {
 // Keeping the current value decides nothing, so it must write nothing.
 func TestMergeText_ConflictKept_IsByteIdentical(t *testing.T) {
 	tmpl := templateFixture(t)
-	base := strings.Replace(tmpl,
+	base := strings.Replace(
+		tmpl,
 		`requires-python = ">=3.11"`,
-		`requires-python = ">=3.12"`, 1)
+		`requires-python = ">=3.12"`,
+		1,
+	)
 
 	got, err := quiet().MergeText(base, tmpl)
 	require.NoError(t, err)
