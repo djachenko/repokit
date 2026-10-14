@@ -3,8 +3,7 @@ import re, json, pathlib, sys, urllib.request
 _MANIFEST_URL = "https://raw.githubusercontent.com/actions/python-versions/main/versions-manifest.json"
 
 text = pathlib.Path("pyproject.toml").read_text()
-m = re.search(r'requires-python\s*=\s*"[^0-9]*3\.(\d+)', text)
-if m:
+if m := re.search(r'requires-python\s*=\s*"[^0-9]*3\.(\d+)', text):
     min_minor = int(m.group(1))
 else:
     min_minor = 11
