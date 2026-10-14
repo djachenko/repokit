@@ -43,6 +43,8 @@ Applied to the default branch. Nobody can push directly — all changes go throu
 - PR required to merge; only merge commits allowed (no squash, no rebase)
 - Required status checks derived from wrapper workflows (e.g. `tests / test`, `integration / integration`)
 
+The same step enables auto-merge in the repository settings. It runs every time, so existing repos get it on the next repokit run.
+
 ## Requirements
 
 - [`git`](https://git-scm.com)

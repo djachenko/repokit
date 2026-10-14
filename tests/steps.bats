@@ -170,6 +170,14 @@ with_path() {
   grep -q '^=== gh api repos/tester/demo/rulesets/777 --method DELETE$' "$GH_CALLS_LOG"
 }
 
+@test "07 enables auto-merge on the repository" {
+  steps 06_workflows.sh
+
+  run steps 07_ruleset.sh
+  [ "$status" -eq 0 ]
+  grep -q '^=== gh api repos/tester/demo --method PATCH --field allow_auto_merge=true$' "$GH_CALLS_LOG"
+}
+
 # ── 08_branch_push ───────────────────────────────────────────────────────────
 
 @test "08 pushes the setup branch and opens a PR into the base branch" {

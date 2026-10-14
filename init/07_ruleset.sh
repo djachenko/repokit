@@ -82,3 +82,7 @@ gh api "repos/$OWNER/$REPO/rulesets" \
   ]
 }
 EOF
+
+# Auto-merge is a repository setting, not a ruleset rule. Set on every run, so
+# repos bootstrapped before this existed pick it up on their next repokit run.
+gh api "repos/$OWNER/$REPO" --method PATCH --field allow_auto_merge=true > /dev/null

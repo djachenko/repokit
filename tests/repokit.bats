@@ -43,6 +43,25 @@ repokit() {
   [ "$(git ls-remote origin refs/heads/chore/repokit-setup | cut -f1)" = "$before" ]
 }
 
+@test "an existing GitHub repo gets auto-merge" {
+  run repokit --language python
+  [ "$status" -eq 0 ]
+  grep -q '^=== gh api repos/tester/demo --method PATCH --field allow_auto_merge=true$' "$GH_CALLS_LOG"
+}
+
+# No GitHub repo yet: gh repo view fails, so 03 creates it and adds an SSH
+# origin, which insteadOf points back at the local bare one. "r" answers the
+# visibility prompt.
+@test "a new GitHub repo gets auto-merge" {
+  git remote remove origin
+  git config --global url."$BATS_TEST_TMPDIR/origin.git".insteadOf git@github.com:tester/demo.git
+
+  GH_FAIL="repo view" run "$REPOKIT_ROOT/repokit" --language python <<< r
+  [ "$status" -eq 0 ]
+  grep -q '^=== gh repo create tester/demo --private$' "$GH_CALLS_LOG"
+  grep -q '^=== gh api repos/tester/demo --method PATCH --field allow_auto_merge=true$' "$GH_CALLS_LOG"
+}
+
 # In a worktree .git is a file, not a directory; hooks live in the main repo.
 @test "run in a worktree, the hook lands where git runs hooks from" {
   main="$PWD"
