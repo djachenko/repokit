@@ -93,8 +93,8 @@ func TestMergeText_Unchanged_IsByteIdentical(t *testing.T) {
 func TestMergeText_SingleValueTaken_ChangesOneLine(t *testing.T) {
 	tmpl := templateFixture(t)
 	base := strings.Replace(tmpl,
-		`requires-python = ">=3.10"`,
-		`requires-python = ">=3.11"`, 1)
+		`requires-python = ">=3.11"`,
+		`requires-python = ">=3.12"`, 1)
 	require.NotEqual(t, tmpl, base, "fixture must actually differ")
 
 	got, err := answering("t\n").MergeText(base, tmpl)
@@ -107,8 +107,8 @@ func TestMergeText_SingleValueTaken_ChangesOneLine(t *testing.T) {
 func TestMergeText_ConflictKept_IsByteIdentical(t *testing.T) {
 	tmpl := templateFixture(t)
 	base := strings.Replace(tmpl,
-		`requires-python = ">=3.10"`,
-		`requires-python = ">=3.11"`, 1)
+		`requires-python = ">=3.11"`,
+		`requires-python = ">=3.12"`, 1)
 
 	got, err := quiet().MergeText(base, tmpl)
 	require.NoError(t, err)
