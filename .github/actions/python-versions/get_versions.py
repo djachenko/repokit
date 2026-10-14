@@ -1,12 +1,15 @@
 import re, json, pathlib, sys, urllib.request
 
-MANIFEST_URL = "https://raw.githubusercontent.com/actions/python-versions/main/versions-manifest.json"
+_MANIFEST_URL = "https://raw.githubusercontent.com/actions/python-versions/main/versions-manifest.json"
 
 text = pathlib.Path("pyproject.toml").read_text()
 m = re.search(r'requires-python\s*=\s*"[^0-9]*3\.(\d+)', text)
-min_minor = int(m.group(1)) if m else 11
+if m:
+    min_minor = int(m.group(1))
+else:
+    min_minor = 11
 
-with urllib.request.urlopen(MANIFEST_URL) as response:
+with urllib.request.urlopen(_MANIFEST_URL) as response:
     manifest = json.load(response)
 
 stable_minors = {
