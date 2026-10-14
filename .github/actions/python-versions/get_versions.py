@@ -18,5 +18,7 @@ stable_minors = {
     if entry["stable"] and entry["version"].startswith("3.")
 }
 versions = [f"3.{minor}" for minor in sorted(stable_minors) if minor >= min_minor]
+if not versions:
+    sys.exit(f"no stable Python release satisfies requires-python >= 3.{min_minor}")
 
 print("versions=" + json.dumps(versions))
