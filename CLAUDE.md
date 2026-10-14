@@ -160,7 +160,7 @@ Merge правит текст поверх lossless AST, а не парсит в
 **tests.yml** (wrapper) — push на любую ветку кроме master → `python-tests.yml`: pytest + ruff + mypy.
 Тесты на master не гоняются — они уже прошли через integration до merge.
 
-**integration.yml** (wrapper) — PR в master → `python-integration.yml`: матрица OS×Python (ubuntu/macos/windows × 3.10–3.x), pytest, затем сборка + TestPyPI + smoke test.
+**integration.yml** (wrapper) — PR в master → `python-integration.yml`: матрица OS×Python (ubuntu/macos/windows × от `requires-python` до последней стабильной из манифеста setup-python), pytest, затем сборка + TestPyPI + smoke test.
 
 **release.yml** (wrapper) — push в master → `python-release.yml`: PSR тегирует, сборка, PyPI. Использует GitHub App token (APP_CLIENT_ID + APP_PRIVATE_KEY) для push тега обходя branch protection.
 
