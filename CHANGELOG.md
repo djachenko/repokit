@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.14.1 - 2026-10-19
+#### Bug Fixes
+- skip test plans in SwiftPM checkouts - (c19728d) - Igor Djachenko
+
+- - -
+
 ## 0.14.0 - 2026-10-14
 #### Features
 - enable auto-merge on every repokit run - (06fd9c2) - Igor Djachenko
